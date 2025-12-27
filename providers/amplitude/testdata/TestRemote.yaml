@@ -1,0 +1,360 @@
+---
+version: 2
+interactions:
+    - id: 0
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 0
+        host: api.lab.amplitude.com
+        headers:
+            Content-Type:
+                - application/json; charset=UTF-8
+            X-Amp-Exp-User:
+                - eyJ1c2VyX2lkIjoidGVzdC11c2VyLTEyMyIsImxpYnJhcnkiOiJleHBlcmltZW50LWdvLXNlcnZlci8xLjkuMCJ9
+        url: https://api.lab.amplitude.com/sdk/v2/vardata
+        method: GET
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: -1
+        uncompressed: true
+        body: '{"test-feature-flag":{"key":"enabled","metadata":{"evaluationId":"1429732931600_1766849705308_7198"},"payload":true,"value":"enabled"}}'
+        headers:
+            Accept-Ranges:
+                - bytes
+            Age:
+                - "2809"
+            Cache-Control:
+                - no-store
+            Cache-Tag:
+                - server-VR3Ikw4b5qAOfQ5eXxvyBAFLC8PIaUOO
+            Content-Type:
+                - application/json;charset=utf-8
+            Date:
+                - Sat, 27 Dec 2025 16:21:54 GMT
+            Strict-Transport-Security:
+                - max-age=31536000; includeSubDomains; preload
+            Vary:
+                - Origin
+            X-Cache:
+                - HIT
+            X-Cache-Hits:
+                - "1"
+            X-Content-Type-Options:
+                - nosniff
+            X-Served-By:
+                - cache-chi-kigq8000066-CHI
+            X-Timer:
+                - S1766852515.717451,VS0,VE1
+        status: 200 OK
+        code: 200
+        duration: 38.859ms
+    - id: 1
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 0
+        host: api.lab.amplitude.com
+        headers:
+            Content-Type:
+                - application/json; charset=UTF-8
+            X-Amp-Exp-User:
+                - eyJ1c2VyX2lkIjoiZXhwZWN0LWVuYWJsZWQiLCJsaWJyYXJ5IjoiZXhwZXJpbWVudC1nby1zZXJ2ZXIvMS45LjAifQ==
+        url: https://api.lab.amplitude.com/sdk/v2/vardata
+        method: GET
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: -1
+        uncompressed: true
+        body: '{"test-feature-flag":{"key":"enabled","metadata":{"evaluationId":"1429732933887_1766849705419_9618"},"payload":true,"value":"enabled"}}'
+        headers:
+            Accept-Ranges:
+                - bytes
+            Age:
+                - "2809"
+            Cache-Control:
+                - no-store
+            Cache-Tag:
+                - server-VR3Ikw4b5qAOfQ5eXxvyBAFLC8PIaUOO
+            Content-Type:
+                - application/json;charset=utf-8
+            Date:
+                - Sat, 27 Dec 2025 16:21:54 GMT
+            Strict-Transport-Security:
+                - max-age=31536000; includeSubDomains; preload
+            Vary:
+                - Origin
+            X-Cache:
+                - HIT
+            X-Cache-Hits:
+                - "1"
+            X-Content-Type-Options:
+                - nosniff
+            X-Served-By:
+                - cache-chi-kigq8000066-CHI
+            X-Timer:
+                - S1766852515.754203,VS0,VE1
+        status: 200 OK
+        code: 200
+        duration: 36.512834ms
+    - id: 2
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 0
+        host: api.lab.amplitude.com
+        headers:
+            Content-Type:
+                - application/json; charset=UTF-8
+            X-Amp-Exp-User:
+                - eyJ1c2VyX2lkIjoiZXhwZWN0LWRpc2FibGVkIiwibGlicmFyeSI6ImV4cGVyaW1lbnQtZ28tc2VydmVyLzEuOS4wIn0=
+        url: https://api.lab.amplitude.com/sdk/v2/vardata
+        method: GET
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: -1
+        uncompressed: true
+        body: '{"test-feature-flag":{"key":"disabled","metadata":{"evaluationId":"1429732927742_1766849705530_2826"},"payload":false,"value":"disabled"}}'
+        headers:
+            Accept-Ranges:
+                - bytes
+            Age:
+                - "2809"
+            Cache-Control:
+                - no-store
+            Cache-Tag:
+                - server-VR3Ikw4b5qAOfQ5eXxvyBAFLC8PIaUOO
+            Content-Type:
+                - application/json;charset=utf-8
+            Date:
+                - Sat, 27 Dec 2025 16:21:54 GMT
+            Strict-Transport-Security:
+                - max-age=31536000; includeSubDomains; preload
+            Vary:
+                - Origin
+            X-Cache:
+                - HIT
+            X-Cache-Hits:
+                - "1"
+            X-Content-Type-Options:
+                - nosniff
+            X-Served-By:
+                - cache-chi-kigq8000066-CHI
+            X-Timer:
+                - S1766852515.791857,VS0,VE2
+        status: 200 OK
+        code: 200
+        duration: 38.422417ms
+    - id: 3
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 0
+        host: api.lab.amplitude.com
+        headers:
+            Content-Type:
+                - application/json; charset=UTF-8
+            X-Amp-Exp-User:
+                - eyJ1c2VyX2lkIjoiZXhwZWN0LWZsb2F0IiwibGlicmFyeSI6ImV4cGVyaW1lbnQtZ28tc2VydmVyLzEuOS4wIn0=
+        url: https://api.lab.amplitude.com/sdk/v2/vardata
+        method: GET
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: -1
+        uncompressed: true
+        body: '{"test-feature-flag":{"key":"payload","metadata":{"evaluationId":"1429732929522_1766849705826_2585"},"payload":12.34,"value":"payload"}}'
+        headers:
+            Accept-Ranges:
+                - bytes
+            Age:
+                - "2809"
+            Cache-Control:
+                - no-store
+            Cache-Tag:
+                - server-VR3Ikw4b5qAOfQ5eXxvyBAFLC8PIaUOO
+            Content-Type:
+                - application/json;charset=utf-8
+            Date:
+                - Sat, 27 Dec 2025 16:21:54 GMT
+            Strict-Transport-Security:
+                - max-age=31536000; includeSubDomains; preload
+            Vary:
+                - Origin
+            X-Cache:
+                - HIT
+            X-Cache-Hits:
+                - "1"
+            X-Content-Type-Options:
+                - nosniff
+            X-Served-By:
+                - cache-chi-kigq8000066-CHI
+            X-Timer:
+                - S1766852515.832005,VS0,VE1
+        status: 200 OK
+        code: 200
+        duration: 38.886042ms
+    - id: 4
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 0
+        host: api.lab.amplitude.com
+        headers:
+            Content-Type:
+                - application/json; charset=UTF-8
+            X-Amp-Exp-User:
+                - eyJ1c2VyX2lkIjoiZXhwZWN0LWludCIsImxpYnJhcnkiOiJleHBlcmltZW50LWdvLXNlcnZlci8xLjkuMCJ9
+        url: https://api.lab.amplitude.com/sdk/v2/vardata
+        method: GET
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: -1
+        uncompressed: true
+        body: '{"test-feature-flag":{"key":"42","metadata":{"evaluationId":"1429732935788_1766849705952_651"},"payload":42,"value":"42"}}'
+        headers:
+            Accept-Ranges:
+                - bytes
+            Age:
+                - "2809"
+            Cache-Control:
+                - no-store
+            Cache-Tag:
+                - server-VR3Ikw4b5qAOfQ5eXxvyBAFLC8PIaUOO
+            Content-Type:
+                - application/json;charset=utf-8
+            Date:
+                - Sat, 27 Dec 2025 16:21:54 GMT
+            Strict-Transport-Security:
+                - max-age=31536000; includeSubDomains; preload
+            Vary:
+                - Origin
+            X-Cache:
+                - HIT
+            X-Cache-Hits:
+                - "1"
+            X-Content-Type-Options:
+                - nosniff
+            X-Served-By:
+                - cache-chi-kigq8000066-CHI
+            X-Timer:
+                - S1766852515.874415,VS0,VE1
+        status: 200 OK
+        code: 200
+        duration: 41.718958ms
+    - id: 5
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 0
+        host: api.lab.amplitude.com
+        headers:
+            Content-Type:
+                - application/json; charset=UTF-8
+            X-Amp-Exp-User:
+                - eyJ1c2VyX2lkIjoiZXhwZWN0LW9iamVjdCIsImxpYnJhcnkiOiJleHBlcmltZW50LWdvLXNlcnZlci8xLjkuMCJ9
+        url: https://api.lab.amplitude.com/sdk/v2/vardata
+        method: GET
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: -1
+        uncompressed: true
+        body: '{"test-feature-flag":{"key":"object","metadata":{"evaluationId":"1429732928838_1766849706058_2654"},"payload":{"a":"A","b":"B"},"value":"object"}}'
+        headers:
+            Accept-Ranges:
+                - bytes
+            Age:
+                - "2809"
+            Cache-Control:
+                - no-store
+            Cache-Tag:
+                - server-VR3Ikw4b5qAOfQ5eXxvyBAFLC8PIaUOO
+            Content-Type:
+                - application/json;charset=utf-8
+            Date:
+                - Sat, 27 Dec 2025 16:21:54 GMT
+            Strict-Transport-Security:
+                - max-age=31536000; includeSubDomains; preload
+            Vary:
+                - Origin
+            X-Cache:
+                - HIT
+            X-Cache-Hits:
+                - "1"
+            X-Content-Type-Options:
+                - nosniff
+            X-Served-By:
+                - cache-chi-kigq8000066-CHI
+            X-Timer:
+                - S1766852515.910264,VS0,VE5
+        status: 200 OK
+        code: 200
+        duration: 40.257792ms
+    - id: 6
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 0
+        host: api.lab.amplitude.com
+        headers:
+            Content-Type:
+                - application/json; charset=UTF-8
+            X-Amp-Exp-User:
+                - eyJ1c2VyX2lkIjoiZXhwZWN0LXN0cmluZyIsImxpYnJhcnkiOiJleHBlcmltZW50LWdvLXNlcnZlci8xLjkuMCJ9
+        url: https://api.lab.amplitude.com/sdk/v2/vardata
+        method: GET
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: -1
+        uncompressed: true
+        body: '{"test-feature-flag":{"key":"string","metadata":{"evaluationId":"1429732949956_1766849706165_8335"},"payload":"foo","value":"string"}}'
+        headers:
+            Accept-Ranges:
+                - bytes
+            Age:
+                - "2809"
+            Cache-Control:
+                - no-store
+            Cache-Tag:
+                - server-VR3Ikw4b5qAOfQ5eXxvyBAFLC8PIaUOO
+            Content-Type:
+                - application/json;charset=utf-8
+            Date:
+                - Sat, 27 Dec 2025 16:21:54 GMT
+            Strict-Transport-Security:
+                - max-age=31536000; includeSubDomains; preload
+            Vary:
+                - Origin
+            X-Cache:
+                - HIT
+            X-Cache-Hits:
+                - "1"
+            X-Content-Type-Options:
+                - nosniff
+            X-Served-By:
+                - cache-chi-kigq8000066-CHI
+            X-Timer:
+                - S1766852515.956020,VS0,VE2
+        status: 200 OK
+        code: 200
+        duration: 41.518ms
