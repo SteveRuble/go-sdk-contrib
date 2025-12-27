@@ -1,0 +1,57 @@
+---
+version: 2
+interactions:
+    - id: 0
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 0
+        host: api.lab.amplitude.com
+        form:
+            v:
+                - "0"
+        headers:
+            Content-Type:
+                - application/json; charset=UTF-8
+            X-Amp-Exp-Library:
+                - experiment-go-server/1.9.0
+        url: https://api.lab.amplitude.com/sdk/v2/flags?v=0
+        method: GET
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: -1
+        uncompressed: true
+        body: '[{"key":"test-feature-flag","metadata":{"deployed":true,"evaluationMode":"local","flagType":"release","flagVersion":17},"segments":[{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-enabled"]}]],"metadata":{"segmentName":"expect-enabled"},"variant":"enabled"},{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-int"]}]],"metadata":{"segmentName":"expect-int"},"variant":"int"},{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-float"]}]],"metadata":{"segmentName":"expect-float"},"variant":"float"},{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-string"]}]],"metadata":{"segmentName":"expect-string"},"variant":"string"},{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-object"]}]],"metadata":{"segmentName":"expect-object"},"variant":"object"},{"metadata":{"segmentName":"All Other Users"},"variant":"off"}],"variants":{"enabled":{"key":"enabled","payload":true,"value":"enabled"},"float":{"key":"float","payload":12.34,"value":"float"},"int":{"key":"int","payload":42,"value":"int"},"object":{"key":"object","payload":{"a":"A","b":"B"},"value":"object"},"off":{"key":"off","metadata":{"default":true}},"string":{"key":"string","payload":"foo","value":"string"}}}]'
+        headers:
+            Accept-Ranges:
+                - bytes
+            Age:
+                - "0"
+            Cache-Control:
+                - no-store
+            Cache-Tag:
+                - server-VR3Ikw4b5qAOfQ5eXxvyBAFLC8PIaUOO
+            Content-Type:
+                - application/json;charset=utf-8
+            Date:
+                - Sat, 27 Dec 2025 20:00:19 GMT
+            Strict-Transport-Security:
+                - max-age=31536000; includeSubDomains; preload
+            Vary:
+                - Origin
+            X-Cache:
+                - HIT
+            X-Cache-Hits:
+                - "1"
+            X-Content-Type-Options:
+                - nosniff
+            X-Served-By:
+                - cache-chi-kigq8000031-CHI
+            X-Timer:
+                - S1766865619.424116,VS0,VE5
+        status: 200 OK
+        code: 200
+        duration: 46.700917ms

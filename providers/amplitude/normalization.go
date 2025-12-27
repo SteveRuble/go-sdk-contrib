@@ -55,15 +55,15 @@ const (
 	KeyGroupCohortIDSet     = "group_cohort_ids"
 )
 
-// KeyMap is a map of string keys that might be in the evaluation context
+
+// DefaultKeyMap is a map of string keys that might be in the evaluation context
 // to the canonical key used by Amplitude.
 // You can add keys to this map to automatically map the keys in the evaluation context
 // to the canonical keys used by Amplitude.
-// Any keys that are not mapped will be added to the User.UserProperties map.
+// Any keys that are not mapped will be added to the [User.UserProperties] map.
 // For more advanced normalization, use a hook to pre-process the evaluation context.
-var KeyMap = map[string]Key{}
-
-func init() {
+func DefaultKeyMap() map[string]Key {
+	var keyMap = map[string]Key{}
 	for k, values := range map[Key][]string {
 		KeyUserID: {KeyUserID, of.TargetingKey, "userId", "user-id", "UserId", "UserID"},
 		KeyDeviceID: {KeyDeviceID, "deviceId", "device-id", "DeviceId", "DeviceID"},
@@ -87,7 +87,8 @@ func init() {
 		KeyGroupCohortIDSet: {KeyGroupCohortIDSet, "groupCohortIds", "group-cohort-ids", "GroupCohortIds", "groupCohortIDs"},
 	}{
 		for _, value := range values {
-			KeyMap[value] = k
+			keyMap[value] = k
 		}
 	}
+	return keyMap
 }

@@ -96,10 +96,110 @@ The Amplitude OpenFeature Provider uses the Amplitude GO SDK.
 
 ### Usage Example
 
-TODO: fill in example.
-
 ```go
+import (
+    "context"
+    
+    amplitude "github.com/open-feature/go-sdk-contrib/providers/amplitude"
+    "github.com/open-feature/go-sdk/openfeature"
+)
 
+func main() {
+    // Create a provider with local evaluation (default)
+    provider, err := amplitude.New(context.Background(), "your-deployment-key")
+    if err != nil {
+        panic(err)
+    }
+    
+    // Or use remote evaluation
+    // provider, err := amplitude.New(context.Background(), "your-deployment-key", 
+    //     amplitude.WithRemoteConfig(remote.Config{}))
+    
+    // Initialize the provider
+    if err := provider.Init(openfeature.EvaluationContext{}); err != nil {
+        panic(err)
+    }
+    defer provider.Shutdown()
+    
+    // Evaluate a flag
+    evalCtx := openfeature.FlattenedContext{
+        openfeature.TargetingKey: "user-123",
+    }
+    result := provider.BooleanEvaluation(context.Background(), "my-feature-flag", false, evalCtx)
+    
+    if result.Value {
+        // Feature is enabled
+    }
+}
 ```
-See [provider_test.go](./pkg/provider_test.go) for more information.
 
+See [provider_test.go](./provider_test.go) for more examples.
+
+## Development
+
+### Running Tests
+
+Unit tests can be run without any external dependencies:
+
+```shell
+go test ./...
+```
+
+### Integration Tests
+
+Integration tests use [go-vcr](https://github.com/dnaeon/go-vcr) to record and replay HTTP interactions. 
+This allows tests to run without network access by replaying previously recorded cassettes.
+
+#### Running in Replay Mode
+
+By default, integration tests run in replay mode using existing cassettes:
+
+```shell
+go test ./...
+```
+
+#### Recording New Cassettes
+
+To record new VCR cassettes (e.g., when updating the test flag configuration or adding new tests), 
+you need to set the following environment variables:
+
+| Environment Variable | Description |
+|---------------------|-------------|
+| `AMPLITUDE_SDK_KEY` | Your Amplitude Experiment deployment key (server-side). This is required for recording. Find this in the Amplitude console under Experiment > Deployments. |
+| `AMPLITUDE_MANAGEMENT_API_KEY` | Your Amplitude Management API key. This is required to automatically create/update the test feature flag. See [Management API Authentication](https://amplitude.com/docs/apis/experiment/experiment-management-api#authentication). |
+| `AMPLITUDE_PROJECT_ID` | Your Amplitude project ID. Required if creating a new flag. Find this in the Amplitude console URL. |
+| `AMPLITUDE_DEPLOYMENT_ID` | Your Amplitude deployment ID. Required if creating a new flag to assign it to a deployment. Find this  by `curl`ing an existing flag you've set up with a deployment. |
+
+Example:
+
+```shell
+export AMPLITUDE_SDK_KEY="server-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+export AMPLITUDE_MANAGEMENT_API_KEY="your-management-api-key"
+export AMPLITUDE_PROJECT_ID="123456"
+export AMPLITUDE_DEPLOYMENT_ID="17994"
+
+go test ./...
+```
+
+When these environment variables are set, the test suite will:
+
+1. Use the Management API to ensure the test feature flag exists with the correct configuration
+2. Record all HTTP interactions to VCR cassettes in the `testdata/` directory
+3. The cassettes can then be committed to version control for replay mode
+
+The test flag configuration is defined in `testdata/test-flag.json`. If you need to modify the flag's 
+variants or targeting rules, update this file and re-record the cassettes.
+
+### Test Flag Configuration
+
+The test feature flag (`test-feature-flag`) is configured with the following variants:
+
+| Variant | Payload | Target Segment |
+|---------|---------|----------------|
+| `enabled` | `true` (boolean) | Users with `user_id = "expect-enabled"` |
+| `int` | `42` (number) | Users with `user_id = "expect-int"` |
+| `payload` | `12.34` (number) | Users with `user_id = "expect-float"` |
+| `string` | `"foo"` (string) | Users with `user_id = "expect-string"` |
+| `object` | `{"a": "A", "b": "B"}` (object) | Users with `user_id = "expect-object"` |
+
+See `testdata/test-flag.json` for the complete configuration.

@@ -1,0 +1,162 @@
+{
+  "projectId": "placeholder",
+  "deployments": [
+    "placeholder"
+  ],
+  "key": "test-feature-flag",
+  "name": "test-feature-flag",
+  "description": "This flag is used in tests in go-common.",
+  "evaluationMode": "local",
+  "bucketingKey": "device_id",
+  "variants": [
+    {
+      "key": "enabled",
+      "name": "enabled value",
+      "payload": true,
+      "description": "Represents explicitly defined `true` value."
+    },
+    {
+      "key": "int",
+      "name": "int",
+      "payload": 42
+    },
+    {
+      "key": "float",
+      "name": "float",
+      "payload": 12.34
+    },
+    {
+      "key": "string",
+      "name": "string",
+      "payload": "foo"
+    },
+    {
+      "key": "object",
+      "name": "object",
+      "payload": {
+        "a": "A",
+        "b": "B"
+      }
+    }
+  ],
+  "rolloutPercentage": 0,
+  "rolloutWeights": {
+    "int": 1,
+    "float": 1,
+    "object": 1,
+    "string": 1,
+    "enabled": 1
+  },
+  "targetSegments": [
+    {
+      "name": "expect-enabled",
+      "conditions": [
+        {
+          "prop": "user_id",
+          "op": "is",
+          "type": "property",
+          "values": [
+            "expect-enabled"
+          ]
+        }
+      ],
+      "percentage": 100,
+      "bucketingKey": "device_id",
+      "rolloutWeights": {
+        "int": 0,
+        "float": 0,
+        "object": 0,
+        "string": 0,
+        "enabled": 100
+      }
+    },
+    {
+      "name": "expect-int",
+      "conditions": [
+        {
+          "prop": "user_id",
+          "op": "is",
+          "type": "property",
+          "values": [
+            "expect-int"
+          ]
+        }
+      ],
+      "percentage": 100,
+      "bucketingKey": "device_id",
+      "rolloutWeights": {
+        "int": 100,
+        "float": 0,
+        "object": 0,
+        "string": 0,
+        "enabled": 0
+      }
+    },
+    {
+      "name": "expect-float",
+      "conditions": [
+        {
+          "prop": "user_id",
+          "op": "is",
+          "type": "property",
+          "values": [
+            "expect-float"
+          ]
+        }
+      ],
+      "percentage": 100,
+      "bucketingKey": "device_id",
+      "rolloutWeights": {
+        "int": 0,
+        "float": 100,
+        "object": 0,
+        "string": 0,
+        "enabled": 0
+      }
+    },
+    {
+      "name": "expect-string",
+      "conditions": [
+        {
+          "prop": "user_id",
+          "op": "is",
+          "type": "property",
+          "values": [
+            "expect-string"
+          ]
+        }
+      ],
+      "percentage": 100,
+      "bucketingKey": "device_id",
+      "rolloutWeights": {
+        "int": 0,
+        "float": 0,
+        "object": 0,
+        "string": 100,
+        "enabled": 0
+      }
+    },
+    {
+      "name": "expect-object",
+      "conditions": [
+        {
+          "prop": "user_id",
+          "op": "is",
+          "type": "property",
+          "values": [
+            "expect-object"
+          ]
+        }
+      ],
+      "percentage": 100,
+      "bucketingKey": "device_id",
+      "rolloutWeights": {
+        "int": 0,
+        "float": 0,
+        "object": 100,
+        "string": 0,
+        "enabled": 0
+      }
+    }
+  ]
+}

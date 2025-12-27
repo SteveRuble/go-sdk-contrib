@@ -38,34 +38,19 @@ package amplitude
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"strconv"
 
 	experiment "github.com/amplitude/experiment-go-server/pkg/experiment"
-	"github.com/amplitude/experiment-go-server/pkg/experiment/local"
-	"github.com/amplitude/experiment-go-server/pkg/experiment/remote"
 	of "github.com/open-feature/go-sdk/openfeature"
 )
 
-func (c *Config) getLocalConfig() localConfig {
-	if c.LocalConfig == nil {
-		return localConfig{Config: local.Config{}}
-	}
-	return localConfig{Config: *c.LocalConfig}
-}
-
-func (c *Config) getRemoteConfig() remoteConfig {
-	if c.RemoteConfig == nil {
-		return remoteConfig{Config: remote.Config{}}
-	}
-	return remoteConfig{Config: *c.RemoteConfig}
-}
-
 // Provider is an OpenFeature provider implementation for Amplitude.
 type Provider struct {
-	providerConfig Config
-	status         of.State
-	client         clientAdapter
+	config Config
+	state  of.State
+	client clientAdapter
 }
 
 const (
@@ -77,7 +62,7 @@ const (
 	variantKeyOff = "off"
 )
 
-// New creates a new Amplitude Experiment provider from a deployment key and options.
+// New creates a new [Provider] from a deployment key and options.
 func New(ctx context.Context, deploymentKey string, options ...Option) (*Provider, error) {
 	config := Config{
 		DeploymentKey: deploymentKey,
@@ -88,24 +73,30 @@ func New(ctx context.Context, deploymentKey string, options ...Option) (*Provide
 	return NewFromConfig(ctx, config)
 }
 
-// NewFromConfig creates a new Amplitude Experiment provider from a Config.
-func NewFromConfig(ctx context.Context, providerConfig Config) (*Provider, error) {
-	if providerConfig.DeploymentKey == "" {
-		return nil, fmt.Errorf("DeploymentKey is required")
+// NewFromConfig creates a new [Provider] from a [Config].
+func NewFromConfig(_ context.Context, config Config) (*Provider, error) {
+	if config.DeploymentKey == "" {
+		return nil, errors.New("you must provide a deployment key")
 	}
 
 	provider := &Provider{
-		status:         of.NotReadyState,
-		providerConfig: providerConfig,
+		state:  of.NotReadyState,
+		config: config,
+	}
+
+	// Allow injecting a test client adapter for testing
+	if config.testClientAdapter != nil {
+		provider.client = config.testClientAdapter
+		return provider, nil
 	}
 
 	switch {
-	case providerConfig.LocalConfig != nil && providerConfig.RemoteConfig != nil:
-		panic("LocalConfig and RemoteConfig cannot be set at the same time")
-	case providerConfig.RemoteConfig != nil:
-		provider.client = newClientAdapterRemote(providerConfig.DeploymentKey, providerConfig.getRemoteConfig())
+	case config.LocalConfig != nil && config.RemoteConfig != nil:
+		return nil, errors.New("you cannot configure the provider to use both local and remote evaluation at the same time")
+	case config.RemoteConfig != nil:
+		provider.client = newClientAdapterRemote(config.DeploymentKey, config.getRemoteConfig())
 	default:
-		provider.client = newClientAdapterLocal(providerConfig.DeploymentKey, providerConfig.getLocalConfig())
+		provider.client = newClientAdapterLocal(config.DeploymentKey, config.getLocalConfig())
 	}
 
 	return provider, nil
@@ -119,11 +110,11 @@ func (p *Provider) Init(_ of.EvaluationContext) error {
 	// Only local client needs to be started
 	startErr := p.client.Start()
 	if startErr != nil {
-		p.status = of.ErrorState
+		p.state = of.ErrorState
 		return startErr
 	}
 
-	p.status = of.ReadyState
+	p.state = of.ReadyState
 	return nil
 }
 
@@ -133,7 +124,7 @@ func (p *Provider) Init(_ of.EvaluationContext) error {
 func (p *Provider) Shutdown() {
 	// TODO: Investigate if there's a way to properly stop the Amplitude client.
 	// The local.Client doesn't expose a Stop/Close method in the current SDK version.
-	p.status = of.NotReadyState
+	p.state = of.NotReadyState
 }
 
 // Hooks returns empty slice as provider does not have any hooks.
@@ -448,7 +439,7 @@ func (p *Provider) ObjectEvaluation(ctx context.Context, flag string, defaultVal
 // that the caller should use the default value.
 // Returns a resolution error if something goes wrong.
 func (p *Provider) evaluateFlag(ctx context.Context, flag string, evalCtx of.FlattenedContext) (*experiment.Variant, *of.ResolutionError) {
-	if p.status != of.ReadyState {
+	if p.state != of.ReadyState {
 		resErr := p.stateError()
 		return nil, &resErr
 	}
@@ -482,7 +473,7 @@ func (p *Provider) evaluateFlag(ctx context.Context, flag string, evalCtx of.Fla
 
 // stateError returns the appropriate resolution error based on provider state.
 func (p *Provider) stateError() of.ResolutionError {
-	if p.status == of.NotReadyState {
+	if p.state == of.NotReadyState {
 		return of.NewProviderNotReadyResolutionError(providerNotReady)
 	}
 	return of.NewGeneralResolutionError(generalError)
@@ -496,12 +487,12 @@ func variantMetadata(variant *experiment.Variant) map[string]any {
 	}
 }
 
-
 // toAmplitudeUser converts an OpenFeature evaluation context to an Amplitude User.
 func (p *Provider) toAmplitudeUser(evalCtx of.FlattenedContext) (*experiment.User, error) {
 	userMap := make(map[Key]any)
+	keyMap := p.config.getKeyMap()
 	for key, val := range evalCtx {
-		resolvedKey, ok := KeyMap[key]
+		resolvedKey, ok := keyMap[key]
 		if ok {
 			userMap[resolvedKey] = val
 		} else {

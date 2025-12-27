@@ -10,10 +10,16 @@ import (
 	"github.com/amplitude/experiment-go-server/pkg/experiment/remote"
 )
 
+// remoteEvaluator is an interface for the remote evaluation client.
+// This allows for testing with a mock implementation.
+type remoteEvaluator interface {
+	FetchV2(user *experiment.User) (map[string]experiment.Variant, error)
+}
+
 // RemoteClient wraps the Amplitude remote evaluation client to implement ExperimentClient.
 type clientAdapterRemote struct {
-	client *remote.Client
-	cache  Cache
+	evaluator remoteEvaluator
+	cache     Cache
 }
 
 // RemoteConfig contains configuration for remote evaluation.
@@ -25,8 +31,8 @@ type remoteConfig struct {
 // NewRemoteClient creates a new RemoteClient with the given deployment key, config, and logger.
 func newClientAdapterRemote(deploymentKey string, config remoteConfig) *clientAdapterRemote {
 	return &clientAdapterRemote{
-		cache:  config.Cache,
-		client: remote.Initialize(deploymentKey, &config.Config),
+		cache:     config.Cache,
+		evaluator: remote.Initialize(deploymentKey, &config.Config),
 	}
 }
 
@@ -47,26 +53,26 @@ func (c *clientAdapterRemote) Evaluate(ctx context.Context, user *experiment.Use
 	var cacheKey string
 	if c.cache != nil {
 		hasher := sha256.New()
-		err := json.NewEncoder(hasher).Encode(user)
-		if err != nil {
-			return nil, fmt.Errorf("failed to encode user to create cache key: %w", err)
-		} 
+		encodeErr := json.NewEncoder(hasher).Encode(user)
+		if encodeErr != nil {
+			return nil, fmt.Errorf("failed to encode user to create cache key: %w", encodeErr)
+		}
 		cacheKey = string(hasher.Sum(nil))
-		cacheValue, err := c.cache.Get(ctx, cacheKey)
-		if err == nil && cacheValue != nil {
+		cacheValue, cacheErr := c.cache.Get(ctx, cacheKey)
+		if cacheErr == nil && cacheValue != nil {
 			return cacheValue.(map[string]experiment.Variant), nil
 		}
 	}
-	variants, fetchErr := c.client.FetchV2(user)
+	variants, fetchErr := c.evaluator.FetchV2(user)
 	if fetchErr != nil {
 		return nil, fetchErr
 	}
 
 	// Store the variants in the cache
 	if c.cache != nil {
-		err := c.cache.Set(ctx, cacheKey, variants)
-		if err != nil {
-			return nil, fmt.Errorf("failed to store variants in cache: %w", err)
+		setErr := c.cache.Set(ctx, cacheKey, variants)
+		if setErr != nil {
+			return nil, fmt.Errorf("failed to store variants in cache: %w", setErr)
 		}
 	}
 
