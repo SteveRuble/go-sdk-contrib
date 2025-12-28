@@ -21,7 +21,7 @@ interactions:
         proto_minor: 0
         content_length: -1
         uncompressed: true
-        body: '{"test-feature-flag":{"key":"enabled","metadata":{"evaluationId":"1429732933887_1766865619666_6244"},"payload":true,"value":"enabled"}}'
+        body: '{"test-feature-flag":{"key":"enabled","metadata":{"evaluationId":"1429732933887_1766866601186_7924"},"payload":true,"value":"enabled"}}'
         headers:
             Accept-Ranges:
                 - bytes
@@ -34,7 +34,7 @@ interactions:
             Content-Type:
                 - application/json;charset=utf-8
             Date:
-                - Sat, 27 Dec 2025 20:00:19 GMT
+                - Sat, 27 Dec 2025 20:16:41 GMT
             Strict-Transport-Security:
                 - max-age=31536000; includeSubDomains; preload
             Vary:
@@ -46,12 +46,12 @@ interactions:
             X-Content-Type-Options:
                 - nosniff
             X-Served-By:
-                - cache-chi-kigq8000031-CHI
+                - cache-chi-kigq8000071-CHI
             X-Timer:
-                - S1766865619.496046,VS0,VE196
+                - S1766866601.156733,VS0,VE68
         status: 200 OK
         code: 200
-        duration: 255.818875ms
+        duration: 105.88525ms
     - id: 1
       request:
         proto: HTTP/1.1
@@ -72,7 +72,7 @@ interactions:
         proto_minor: 0
         content_length: -1
         uncompressed: true
-        body: '{"test-feature-flag":{"key":"string","metadata":{"evaluationId":"1429732949956_1766865619858_8233"},"payload":"foo","value":"string"}}'
+        body: '{"test-feature-flag":{"key":"string","metadata":{"evaluationId":"1429732949956_1766866601292_2788"},"payload":"foo","value":"string"}}'
         headers:
             Accept-Ranges:
                 - bytes
@@ -85,7 +85,7 @@ interactions:
             Content-Type:
                 - application/json;charset=utf-8
             Date:
-                - Sat, 27 Dec 2025 20:00:19 GMT
+                - Sat, 27 Dec 2025 20:16:41 GMT
             Strict-Transport-Security:
                 - max-age=31536000; includeSubDomains; preload
             Vary:
@@ -97,12 +97,12 @@ interactions:
             X-Content-Type-Options:
                 - nosniff
             X-Served-By:
-                - cache-chi-kigq8000031-CHI
+                - cache-chi-kigq8000071-CHI
             X-Timer:
-                - S1766865620.829410,VS0,VE53
+                - S1766866601.264342,VS0,VE52
         status: 200 OK
         code: 200
-        duration: 189.747833ms
+        duration: 92.246125ms
     - id: 2
       request:
         proto: HTTP/1.1
@@ -123,7 +123,7 @@ interactions:
         proto_minor: 0
         content_length: -1
         uncompressed: true
-        body: '{"test-feature-flag":{"key":"int","metadata":{"evaluationId":"1429732935788_1766865620243_5247"},"payload":42,"value":"int"}}'
+        body: '{"test-feature-flag":{"key":"int","metadata":{"evaluationId":"1429732935788_1766866601379_5033"},"payload":42,"value":"int"}}'
         headers:
             Accept-Ranges:
                 - bytes
@@ -136,7 +136,7 @@ interactions:
             Content-Type:
                 - application/json;charset=utf-8
             Date:
-                - Sat, 27 Dec 2025 20:00:20 GMT
+                - Sat, 27 Dec 2025 20:16:41 GMT
             Strict-Transport-Security:
                 - max-age=31536000; includeSubDomains; preload
             Vary:
@@ -148,12 +148,12 @@ interactions:
             X-Content-Type-Options:
                 - nosniff
             X-Served-By:
-                - cache-chi-kigq8000031-CHI
+                - cache-chi-kigq8000071-CHI
             X-Timer:
-                - S1766865620.214244,VS0,VE56
+                - S1766866601.352818,VS0,VE50
         status: 200 OK
         code: 200
-        duration: 387.08675ms
+        duration: 86.273291ms
     - id: 3
       request:
         proto: HTTP/1.1
@@ -174,7 +174,7 @@ interactions:
         proto_minor: 0
         content_length: -1
         uncompressed: true
-        body: '{"test-feature-flag":{"key":"float","metadata":{"evaluationId":"1429732929522_1766865620338_5915"},"payload":12.34,"value":"float"}}'
+        body: '{"test-feature-flag":{"key":"float","metadata":{"evaluationId":"1429732929522_1766866601471_6858"},"payload":12.34,"value":"float"}}'
         headers:
             Accept-Ranges:
                 - bytes
@@ -187,7 +187,7 @@ interactions:
             Content-Type:
                 - application/json;charset=utf-8
             Date:
-                - Sat, 27 Dec 2025 20:00:20 GMT
+                - Sat, 27 Dec 2025 20:16:41 GMT
             Strict-Transport-Security:
                 - max-age=31536000; includeSubDomains; preload
             Vary:
@@ -199,12 +199,12 @@ interactions:
             X-Content-Type-Options:
                 - nosniff
             X-Served-By:
-                - cache-chi-kigq8000031-CHI
+                - cache-chi-kigq8000071-CHI
             X-Timer:
-                - S1766865620.309906,VS0,VE56
+                - S1766866601.443428,VS0,VE53
         status: 200 OK
         code: 200
-        duration: 94.348959ms
+        duration: 97.712041ms
     - id: 4
       request:
         proto: HTTP/1.1
@@ -225,7 +225,7 @@ interactions:
         proto_minor: 0
         content_length: -1
         uncompressed: true
-        body: '{"test-feature-flag":{"key":"object","metadata":{"evaluationId":"1429732928838_1766865620443_4776"},"payload":{"a":"A","b":"B"},"value":"object"}}'
+        body: '{"test-feature-flag":{"key":"object","metadata":{"evaluationId":"1429732928838_1766866601574_8902"},"payload":{"a":"A","b":"B"},"value":"object"}}'
         headers:
             Accept-Ranges:
                 - bytes
@@ -238,7 +238,7 @@ interactions:
             Content-Type:
                 - application/json;charset=utf-8
             Date:
-                - Sat, 27 Dec 2025 20:00:20 GMT
+                - Sat, 27 Dec 2025 20:16:41 GMT
             Strict-Transport-Security:
                 - max-age=31536000; includeSubDomains; preload
             Vary:
@@ -250,9 +250,9 @@ interactions:
             X-Content-Type-Options:
                 - nosniff
             X-Served-By:
-                - cache-chi-kigq8000031-CHI
+                - cache-chi-kigq8000071-CHI
             X-Timer:
-                - S1766865620.411936,VS0,VE66
+                - S1766866602.543191,VS0,VE64
         status: 200 OK
         code: 200
-        duration: 112.899167ms
+        duration: 105.352958ms

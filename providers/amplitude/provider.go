@@ -1,38 +1,3 @@
-// Package amplitude provides an OpenFeature provider implementation
-// for the Amplitude Experiment SDK, supporting both local and remote evaluation.
-//
-// # Default "off" Variant Handling
-//
-// When a user is not included in a feature flag's rollout, Amplitude returns a
-// variant with Key="off" and no payload. This provider detects this case and
-// returns the caller-provided default value with Reason=DefaultReason.
-//
-// # Boolean Flag Evaluation
-//
-// For boolean flags, evaluation follows this precedence:
-//  1. If the payload can be unmarshalled to a boolean, that value is used
-//  2. Otherwise, falls back to variant key logic:
-//     - If the variant key is "off", the default value is returned
-//     - If the variant key is anything else, true is returned
-//
-// This allows explicit boolean payloads to control the value, while still
-// supporting simple on/off toggles where any non-off variant means enabled.
-//
-// # Typed Values via Payload
-//
-// For non-boolean types (string, int64, float64, interface{}), this provider
-// extracts flag values from the Amplitude Variant's Payload field, which contains
-// the JSON-decoded value configured in the Amplitude Experiment console. The
-// payload is unmarshalled to the expected type.
-//
-// # User Context Mapping
-//
-// The OpenFeature evaluation context is mapped to an Amplitude User as follows:
-//   - TargetingKey, UserID, UserId, user_id -> User.UserId
-//   - DeviceID, DeviceId, device_id -> User.DeviceId
-//   - All other keys -> User.UserProperties
-//
-// Either UserId or DeviceId must be present for evaluation to succeed.
 package amplitude
 
 import (
@@ -44,6 +9,12 @@ import (
 
 	experiment "github.com/amplitude/experiment-go-server/pkg/experiment"
 	of "github.com/open-feature/go-sdk/openfeature"
+)
+
+// Compile-time interface checks.
+var (
+	_ of.FeatureProvider = (*Provider)(nil)
+	_ of.StateHandler    = (*Provider)(nil)
 )
 
 // Provider is an OpenFeature provider implementation for Amplitude.
@@ -125,6 +96,11 @@ func (p *Provider) Shutdown() {
 	// TODO: Investigate if there's a way to properly stop the Amplitude client.
 	// The local.Client doesn't expose a Stop/Close method in the current SDK version.
 	p.state = of.NotReadyState
+}
+
+// Status returns the current state of the provider.
+func (p *Provider) Status() of.State {
+	return p.state
 }
 
 // Hooks returns empty slice as provider does not have any hooks.
@@ -209,7 +185,8 @@ func (p *Provider) StringEvaluation(ctx context.Context, flag string, defaultVal
 		}
 	}
 
-	if castType, ok := variant.Payload.(string); ok {
+	switch castType := variant.Payload.(type) {
+	case string:
 		return of.StringResolutionDetail{
 			Value: castType,
 			ProviderResolutionDetail: of.ProviderResolutionDetail{
@@ -217,12 +194,23 @@ func (p *Provider) StringEvaluation(ctx context.Context, flag string, defaultVal
 				FlagMetadata: variantMetadata(variant),
 			},
 		}
+	case nil:
+		return of.StringResolutionDetail{
+			Value: defaultValue,
+			ProviderResolutionDetail: of.ProviderResolutionDetail{
+				Reason: of.DefaultReason,
+			},
+		}
 	}
 
 	return of.StringResolutionDetail{
 		Value: defaultValue,
 		ProviderResolutionDetail: of.ProviderResolutionDetail{
-			Reason: of.DefaultReason,
+			Reason: of.ErrorReason,
+			ResolutionError: of.NewTypeMismatchResolutionError(
+				fmt.Sprintf("StringEvaluation type error for %s, payload is %T "+
+					"(automatically unmarshalled from JSON configured in the Amplitude console for this flag)",
+					flag, variant.Payload)),
 		},
 	}
 }

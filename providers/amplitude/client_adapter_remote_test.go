@@ -206,17 +206,17 @@ func TestClientAdapterRemote_Evaluate_FetchError(t *testing.T) {
 	assert.Equal(t, expectedErr, err)
 }
 
-func TestClientAdapterRemote_Evaluate_CacheSetError(t *testing.T) {
+func TestClientAdapterRemote_Evaluate_CacheSetError_LogsButSucceeds(t *testing.T) {
 	expectedVariants := map[string]experiment.Variant{
 		"flag-1": {Key: "on", Value: "enabled"},
 	}
-	cacheErr := errors.New("cache set error")
 	evaluator := &mockRemoteEvaluator{
 		fetchFunc: func(user *experiment.User) (map[string]experiment.Variant, error) {
 			return expectedVariants, nil
 		},
 	}
-	cache := &mockCacheWithError{setErr: cacheErr}
+	// Cache set returns error, but evaluation should still succeed
+	cache := &mockCacheWithError{setErr: errors.New("cache set error")}
 
 	client := &clientAdapterRemote{
 		evaluator: evaluator,
@@ -226,9 +226,9 @@ func TestClientAdapterRemote_Evaluate_CacheSetError(t *testing.T) {
 	user := &experiment.User{UserId: "user-1"}
 	result, err := client.Evaluate(context.Background(), user, nil)
 
-	assert.Nil(t, result)
-	require.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to store variants in cache")
+	// Cache set errors should be logged but not fail the evaluation
+	require.NoError(t, err)
+	assert.Equal(t, expectedVariants, result)
 }
 
 func TestClientAdapterRemote_Evaluate_CacheGetError_StillFetches(t *testing.T) {

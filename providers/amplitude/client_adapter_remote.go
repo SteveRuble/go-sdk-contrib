@@ -5,6 +5,7 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"log"
 
 	experiment "github.com/amplitude/experiment-go-server/pkg/experiment"
 	"github.com/amplitude/experiment-go-server/pkg/experiment/remote"
@@ -20,6 +21,7 @@ type remoteEvaluator interface {
 type clientAdapterRemote struct {
 	evaluator remoteEvaluator
 	cache     Cache
+	config    remoteConfig
 }
 
 // RemoteConfig contains configuration for remote evaluation.
@@ -33,6 +35,7 @@ func newClientAdapterRemote(deploymentKey string, config remoteConfig) *clientAd
 	return &clientAdapterRemote{
 		cache:     config.Cache,
 		evaluator: remote.Initialize(deploymentKey, &config.Config),
+		config:    config,
 	}
 }
 
@@ -68,11 +71,14 @@ func (c *clientAdapterRemote) Evaluate(ctx context.Context, user *experiment.Use
 		return nil, fetchErr
 	}
 
-	// Store the variants in the cache
+	// Store the variants in the cache (best effort - log errors but don't fail evaluation)
 	if c.cache != nil {
-		setErr := c.cache.Set(ctx, cacheKey, variants)
-		if setErr != nil {
-			return nil, fmt.Errorf("failed to store variants in cache: %w", setErr)
+		if setErr := c.cache.Set(ctx, cacheKey, variants); setErr != nil {
+			if c.config.LoggerProvider != nil {
+				c.config.LoggerProvider.Error("amplitude: failed to store variants in cache: %s", setErr)
+			} else {
+				log.Printf("amplitude: failed to store variants in cache: %v", setErr)
+			}
 		}
 	}
 

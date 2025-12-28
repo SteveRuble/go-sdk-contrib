@@ -95,5 +95,8 @@ func (c *Config) getRemoteConfig() remoteConfig {
 	if c.RemoteConfig == nil {
 		c.RemoteConfig = &remote.Config{}
 	}
-	return remoteConfig{Config: *c.RemoteConfig}
+	return remoteConfig{
+		Config: *c.RemoteConfig,
+		Cache:  c.RemoteEvaluationCache,
+	}
 }

@@ -138,32 +138,32 @@ func TestToAmplitudeUser_StandardAmplitudeFields(t *testing.T) {
 
 	evalCtx := of.FlattenedContext{
 		of.TargetingKey: "user-123",
-		KeyCountry:       "US",
-		KeyRegion:        "CA",
-		KeyCity:          "San Francisco",
-		KeyLanguage:      "en",
-		KeyPlatform:      "iOS",
-		KeyVersion:       "1.0.0",
-		KeyOs:            "iOS 16",
-		KeyCarrier:       "Verizon",
-		KeyLibrary:       "go-sdk",
-		KeyUserProperties: map[string]any{
+		string(KeyCountry):       "US",
+		string(KeyRegion):        "CA",
+		string(KeyCity):          "San Francisco",
+		string(KeyLanguage):      "en",
+		string(KeyPlatform):      "iOS",
+		string(KeyVersion):       "1.0.0",
+		string(KeyOs):            "iOS 16",
+		string(KeyCarrier):       "Verizon",
+		string(KeyLibrary):       "go-sdk",
+		string(KeyUserProperties): map[string]any{
 			"custom_prop": "custom_value",
 		},
-		KeyGroupProperties: map[string]map[string]any{
+		string(KeyGroupProperties): map[string]map[string]any{
 			"group-1": {
 				"custom_prop": "custom_value",
 			},
 		},
-		KeyGroups: map[string][]string{
+		string(KeyGroups): map[string][]string{
 			"group-1": {"group-1", "group-2"},
 			"group-2": {"group-3", "group-4"},
 		},
-		KeyCohortIDs: map[string]struct{}{
+		string(KeyCohortIDs): map[string]struct{}{
 			"cohort-1": {},
 			"cohort-2": {},
 		},
-		KeyGroupCohortIDSet: map[string]map[string]map[string]struct{}{
+		string(KeyGroupCohortIDSet): map[string]map[string]map[string]struct{}{
 			"group-1": {
 				"cohort-1": {},
 				"cohort-2": {},	

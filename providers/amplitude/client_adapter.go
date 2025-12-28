@@ -6,7 +6,7 @@ import (
 	"github.com/amplitude/experiment-go-server/pkg/experiment"
 )
 
-// clientWrapper is an interface for evaluating feature flags using the
+// clientAdapter is an interface for evaluating feature flags using the
 // Amplitude Experiment SDK. It abstracts over local and remote evaluation modes.
 type clientAdapter interface {
 	// Evaluate evaluates the given flags for the given user and returns a map

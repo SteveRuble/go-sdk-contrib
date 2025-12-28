@@ -129,6 +129,19 @@ func TestConfig_getRemoteConfig(t *testing.T) {
 	}
 }
 
+func TestConfig_getRemoteConfig_IncludesCache(t *testing.T) {
+	cache := &mockCache{}
+	cfg := Config{
+		RemoteConfig:          &remote.Config{Debug: true},
+		RemoteEvaluationCache: cache,
+	}
+
+	result := cfg.getRemoteConfig()
+
+	assert.Equal(t, cache, result.Cache, "getRemoteConfig should include RemoteEvaluationCache")
+	assert.True(t, result.Debug)
+}
+
 func TestNew_AppliesOptions(t *testing.T) {
 	mock := &mockClientAdapter{}
 

@@ -284,7 +284,7 @@ func TestProvider_StringEvaluation(t *testing.T) {
 			expectedError: false,
 		},
 		{
-			name:         "returns default when payload is not string",
+			name:         "returns error when payload is not string",
 			flagName:     "test-flag",
 			defaultValue: "default",
 			evalCtx:      of.FlattenedContext{of.TargetingKey: "user-1"},
@@ -292,8 +292,8 @@ func TestProvider_StringEvaluation(t *testing.T) {
 				"test-flag": makeVariant("variant-a", "value-a", 123),
 			},
 			expectedValue: "default",
-			expectedError: false,
-			reason:        of.DefaultReason,
+			expectedError: true,
+			reason:        of.ErrorReason,
 		},
 		{
 			name:         "returns default when variant is nil",
