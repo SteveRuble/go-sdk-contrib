@@ -13,7 +13,7 @@ require (
 )
 
 require (
-	github.com/amplitude/analytics-go v1.0.1 // indirect
+	github.com/amplitude/analytics-go v1.2.0 // indirect
 	github.com/amplitude/experiment-go-server v1.9.0
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/go-logr/logr v1.4.3 // indirect

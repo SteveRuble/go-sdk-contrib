@@ -12,8 +12,10 @@ import (
 	"path/filepath"
 	"regexp"
 	"testing"
+	"time"
 
-	experiment "github.com/amplitude/experiment-go-server/pkg/experiment"
+	analytics "github.com/amplitude/analytics-go/amplitude"
+	"github.com/amplitude/analytics-go/amplitude/types"
 	"github.com/amplitude/experiment-go-server/pkg/experiment/local"
 	"github.com/amplitude/experiment-go-server/pkg/experiment/remote"
 	pkg "github.com/open-feature/go-sdk-contrib/providers/amplitude"
@@ -45,22 +47,26 @@ type IntegrationTestSuite struct {
 	managementAPIKey  string
 	projectID         string
 	deploymentID      string
+	projectKey        string
 	recorder          *recorder.Recorder
 	originalTransport http.RoundTripper
+	publishedEvents   chan types.ExecuteResult
 }
 
 // SetupSuite is called once before all tests in the suite.
 // It configures VCR and ensures the test flag exists in Amplitude.
 func (s *IntegrationTestSuite) SetupSuite() {
-	s.deploymentKey = os.Getenv("AMPLITUDE_SDK_KEY")
+	s.deploymentKey = os.Getenv("AMPLITUDE_DEPLOYMENT_KEY")
 	s.managementAPIKey = os.Getenv("AMPLITUDE_MANAGEMENT_API_KEY")
 	s.projectID = os.Getenv("AMPLITUDE_PROJECT_ID")
 	s.deploymentID = os.Getenv("AMPLITUDE_DEPLOYMENT_ID")
+	s.projectKey = os.Getenv("AMPLITUDE_PROJECT_KEY")
+	s.publishedEvents = make(chan types.ExecuteResult, 1000)
 
-	shouldRecord := s.deploymentKey != "" && s.managementAPIKey != ""
+	shouldRecord := s.deploymentKey != "" && s.managementAPIKey != "" && s.projectKey != ""
 
 	if shouldRecord {
-		s.T().Log("Recording mode: AMPLITUDE_SDK_KEY and AMPLITUDE_MANAGEMENT_API_KEY are set")
+		s.T().Log("Recording mode: AMPLITUDE_DEPLOYMENT_KEY and AMPLITUDE_MANAGEMENT_API_KEY are set")
 		s.ensureTestFlagExists()
 	} else {
 		s.T().Log("Replay mode: using VCR cassettes")
@@ -73,9 +79,220 @@ func (s *IntegrationTestSuite) TearDownSuite() {
 	// Nothing to clean up at suite level
 }
 
+// TestIntegration runs the integration test suite.
+func TestIntegration(t *testing.T) {
+	suite.Run(t, new(IntegrationTestSuite))
+}
+
+// TestLocalEvaluation tests the provider with local evaluation.
+func (s *IntegrationTestSuite) TestLocalEvaluation() {
+	s.setupVCR(s.T().Name())
+	defer s.tearDownVCR()
+
+	provider, providerErr := pkg.New(
+		context.Background(),
+		s.deploymentKey,
+		pkg.WithLocalConfig(local.Config{}),
+		pkg.WithTrackingEnabled(analytics.Config{
+			APIKey:         s.projectKey,
+			FlushInterval:  1 * time.Millisecond,
+			FlushQueueSize: 1,
+			ExecuteCallback: func(result types.ExecuteResult) {
+				s.publishedEvents <- result
+			},
+			UseBatch: false,
+			OptOut:   false,
+		}),
+	)
+	s.Require().NoError(providerErr)
+	defer provider.Shutdown()
+
+	initErr := provider.Init(of.EvaluationContext{})
+	s.Require().NoError(initErr)
+
+	s.runEvaluationTests(provider)
+}
+
+func (s *IntegrationTestSuite) SetupTest() {
+	s.SetupSubTest()
+}
+
+func (s *IntegrationTestSuite) SetupSubTest() {
+	// Always reset the published events channel for each sub-test,
+	// so we don't get events from previous tests if there was no assertion about them.
+	s.publishedEvents = make(chan types.ExecuteResult, 1000)
+}
+
+// TestRemoteEvaluation tests the provider with remote evaluation.
+func (s *IntegrationTestSuite) TestRemoteEvaluation() {
+	s.setupVCR(s.T().Name())
+	defer s.tearDownVCR()
+
+	provider, providerErr := pkg.New(
+		context.Background(),
+		s.deploymentKey,
+		pkg.WithRemoteConfig(remote.Config{}),
+		pkg.WithTrackingEnabled(analytics.Config{
+			APIKey:         s.projectKey,
+			FlushInterval:  1 * time.Millisecond,
+			FlushQueueSize: 1,
+			ExecuteCallback: func(result types.ExecuteResult) {
+				s.publishedEvents <- result
+			},
+			UseBatch: false,
+			OptOut:   false,
+		}),
+	)
+	s.Require().NoError(providerErr)
+	defer provider.Shutdown()
+
+	initErr := provider.Init(of.EvaluationContext{})
+	s.Require().NoError(initErr)
+
+	s.runEvaluationTests(provider)
+}
+
+// runEvaluationTests runs all evaluation tests against the given provider.
+func (s *IntegrationTestSuite) runEvaluationTests(provider *pkg.Provider) {
+	s.Run("BooleanEvaluation", func() {
+		evalCtx := of.FlattenedContext{
+			of.TargetingKey: "expect-enabled",
+		}
+
+		result := provider.BooleanEvaluation(context.Background(), testFlagName, false, evalCtx)
+
+		s.Equal(of.ResolutionError{}, result.ResolutionError, "expected no resolution error")
+		s.Equal(true, result.Value)
+
+		s.assertPublishedEvent(func(event types.ExecuteResult) {
+			j, _ := json.Marshal(event.Event)
+			s.T().Logf("published event: %s", string(j))
+			s.Equal("$exposure", event.Event.EventType)
+			s.Equal("expect-enabled", event.Event.UserID)
+			s.Equal(testFlagName, event.Event.EventProperties["flag_key"])
+			s.Equal("enabled", event.Event.EventProperties["variant"])
+		})
+	})
+
+	s.Run("StringEvaluation", func() {
+		evalCtx := of.FlattenedContext{
+			of.TargetingKey: "expect-string",
+		}
+
+		result := provider.StringEvaluation(context.Background(), testFlagName, "default", evalCtx)
+
+		s.Equal(of.ResolutionError{}, result.ResolutionError, "expected no resolution error")
+		s.Equal("foo", result.Value)
+	})
+
+	s.Run("IntEvaluation", func() {
+		evalCtx := of.FlattenedContext{
+			of.TargetingKey: "expect-int",
+		}
+
+		result := provider.IntEvaluation(context.Background(), testFlagName, 0, evalCtx)
+
+		s.Equal(of.ResolutionError{}, result.ResolutionError, "expected no resolution error")
+		s.Equal(int64(42), result.Value)
+	})
+
+	s.Run("FloatEvaluation", func() {
+		evalCtx := of.FlattenedContext{
+			of.TargetingKey: "expect-float",
+		}
+
+		result := provider.FloatEvaluation(context.Background(), testFlagName, 0.0, evalCtx)
+
+		s.Equal(of.ResolutionError{}, result.ResolutionError, "expected no resolution error")
+		s.Equal(12.34, result.Value)
+	})
+
+	s.Run("ObjectEvaluation", func() {
+		evalCtx := of.FlattenedContext{
+			of.TargetingKey: "expect-object",
+		}
+
+		result := provider.ObjectEvaluation(context.Background(), testFlagName, nil, evalCtx)
+
+		s.Equal(of.ResolutionError{}, result.ResolutionError, "expected no resolution error")
+		s.Equal(map[string]any{"a": "A", "b": "B"}, result.Value)
+	})
+}
+
+// TestProviderNotReady tests that the provider returns errors when not initialized.
+func (s *IntegrationTestSuite) TestProviderNotReady() {
+	s.setupVCR(s.T().Name())
+	defer s.tearDownVCR()
+
+	provider, providerErr := pkg.New(
+		context.Background(),
+		s.deploymentKey,
+	)
+	s.Require().NoError(providerErr)
+	defer provider.Shutdown()
+
+	// Don't call Init - provider should not be ready
+
+	evalCtx := of.FlattenedContext{
+		of.TargetingKey: "test-user",
+	}
+
+	s.Run("BooleanEvaluation returns error when not ready", func() {
+		result := provider.BooleanEvaluation(context.Background(), testFlagName, false, evalCtx)
+		s.NotEmpty(result.ResolutionError)
+		s.Equal(false, result.Value) // Should return default
+	})
+
+	s.Run("StringEvaluation returns error when not ready", func() {
+		result := provider.StringEvaluation(context.Background(), testFlagName, "default", evalCtx)
+		s.NotEmpty(result.ResolutionError)
+		s.Equal("default", result.Value) // Should return default
+	})
+}
+
+// TestMissingTargetingKey tests that the provider returns errors when targeting key is missing.
+func (s *IntegrationTestSuite) TestMissingTargetingKey() {
+	s.setupVCR(s.T().Name())
+	defer s.tearDownVCR()
+
+	provider, providerErr := pkg.New(
+		context.Background(),
+		s.deploymentKey,
+	)
+	s.Require().NoError(providerErr)
+
+	initErr := provider.Init(of.EvaluationContext{})
+	s.Require().NoError(initErr)
+	defer provider.Shutdown()
+
+	// Empty eval context - no targeting key
+	evalCtx := of.FlattenedContext{}
+
+	result := provider.StringEvaluation(context.Background(), testFlagName, "default", evalCtx)
+
+	s.NotEmpty(result.ResolutionError)
+	s.Equal("default", result.Value)
+}
+
+// TestNewProvider_MissingDeploymentKey tests that NewProvider returns an error when deployment key is missing.
+func (s *IntegrationTestSuite) TestNewProvider_MissingDeploymentKey() {
+	_, providerErr := pkg.New(context.Background(), "")
+	s.Require().Error(providerErr)
+	s.Contains(providerErr.Error(), "you must provide a deployment key")
+}
+
+func (s *IntegrationTestSuite) assertPublishedEvent(assertion func(event types.ExecuteResult)) {
+	select {
+	case event := <-s.publishedEvents:
+		assertion(event)
+	case <-time.After(1 * time.Second):
+		s.Fail("timed out waiting for published event")
+	}
+}
+
 // setupVCR configures go-vcr for recording or replaying HTTP interactions.
 func (s *IntegrationTestSuite) setupVCR(testName string) {
-	shouldRecord := os.Getenv("AMPLITUDE_SDK_KEY") != ""
+	shouldRecord := os.Getenv("AMPLITUDE_DEPLOYMENT_KEY") != ""
 
 	mode := recorder.ModeReplayOnly
 	if shouldRecord {
@@ -348,252 +565,3 @@ func (s *IntegrationTestSuite) updateFlag(flagID any, config map[string]any) err
 
 	return nil
 }
-
-// TestIntegration runs the integration test suite.
-func TestIntegration(t *testing.T) {
-	suite.Run(t, new(IntegrationTestSuite))
-}
-
-// TestLocalEvaluation tests the provider with local evaluation.
-func (s *IntegrationTestSuite) TestLocalEvaluation() {
-	s.setupVCR(s.T().Name())
-	defer s.tearDownVCR()
-
-	provider, providerErr := pkg.New(
-		context.Background(),
-		s.deploymentKey,
-		pkg.WithLocalConfig(local.Config{}),
-	)
-	s.Require().NoError(providerErr)
-	defer provider.Shutdown()
-
-	initErr := provider.Init(of.EvaluationContext{})
-	s.Require().NoError(initErr)
-
-	s.runEvaluationTests(provider)
-}
-
-// TestRemoteEvaluation tests the provider with remote evaluation.
-func (s *IntegrationTestSuite) TestRemoteEvaluation() {
-	s.setupVCR(s.T().Name())
-	defer s.tearDownVCR()
-
-	provider, providerErr := pkg.New(
-		context.Background(),
-		s.deploymentKey,
-		pkg.WithRemoteConfig(remote.Config{}),
-	)
-	s.Require().NoError(providerErr)
-	defer provider.Shutdown()
-
-	initErr := provider.Init(of.EvaluationContext{})
-	s.Require().NoError(initErr)
-
-	s.runEvaluationTests(provider)
-}
-
-// runEvaluationTests runs all evaluation tests against the given provider.
-func (s *IntegrationTestSuite) runEvaluationTests(provider *pkg.Provider) {
-	s.Run("BooleanEvaluation", func() {
-		tests := []struct {
-			name          string
-			userID        string
-			expectedValue bool
-		}{
-			{
-				name:          "expect-enabled user should see enabled (true)",
-				userID:        "expect-enabled",
-				expectedValue: true,
-			},
-		}
-
-		for _, tt := range tests {
-			s.Run(tt.name, func() {
-				evalCtx := of.FlattenedContext{
-					of.TargetingKey: tt.userID,
-				}
-
-				result := provider.BooleanEvaluation(context.Background(), testFlagName, false, evalCtx)
-
-				s.Equal(of.ResolutionError{}, result.ResolutionError, "expected no resolution error")
-				s.Equal(tt.expectedValue, result.Value)
-			})
-		}
-	})
-
-	s.Run("StringEvaluation", func() {
-		tests := []struct {
-			name          string
-			userID        string
-			expectedValue string
-		}{
-			{
-				name:          "expect-string user should see foo",
-				userID:        "expect-string",
-				expectedValue: "foo",
-			},
-		}
-
-		for _, tt := range tests {
-			s.Run(tt.name, func() {
-				evalCtx := of.FlattenedContext{
-					of.TargetingKey: tt.userID,
-				}
-
-				result := provider.StringEvaluation(context.Background(), testFlagName, "default", evalCtx)
-
-				s.Equal(of.ResolutionError{}, result.ResolutionError, "expected no resolution error")
-				s.Equal(tt.expectedValue, result.Value)
-			})
-		}
-	})
-
-	s.Run("IntEvaluation", func() {
-		tests := []struct {
-			name          string
-			userID        string
-			expectedValue int64
-		}{
-			{
-				name:          "expect-int user should see 42",
-				userID:        "expect-int",
-				expectedValue: 42,
-			},
-		}
-
-		for _, tt := range tests {
-			s.Run(tt.name, func() {
-				evalCtx := of.FlattenedContext{
-					of.TargetingKey: tt.userID,
-				}
-
-				result := provider.IntEvaluation(context.Background(), testFlagName, 0, evalCtx)
-
-				s.Equal(of.ResolutionError{}, result.ResolutionError, "expected no resolution error")
-				s.Equal(tt.expectedValue, result.Value)
-			})
-		}
-	})
-
-	s.Run("FloatEvaluation", func() {
-		tests := []struct {
-			name          string
-			userID        string
-			expectedValue float64
-		}{
-			{
-				name:          "expect-float user should see 12.34",
-				userID:        "expect-float",
-				expectedValue: 12.34,
-			},
-		}
-
-		for _, tt := range tests {
-			s.Run(tt.name, func() {
-				evalCtx := of.FlattenedContext{
-					of.TargetingKey: tt.userID,
-				}
-
-				result := provider.FloatEvaluation(context.Background(), testFlagName, 0.0, evalCtx)
-
-				s.Equal(of.ResolutionError{}, result.ResolutionError, "expected no resolution error")
-				s.Equal(tt.expectedValue, result.Value)
-			})
-		}
-	})
-
-	s.Run("ObjectEvaluation", func() {
-		tests := []struct {
-			name          string
-			userID        string
-			expectedValue map[string]any
-		}{
-			{
-				name:   "expect-object user should see object with a and b",
-				userID: "expect-object",
-				expectedValue: map[string]any{
-					"a": "A",
-					"b": "B",
-				},
-			},
-		}
-
-		for _, tt := range tests {
-			s.Run(tt.name, func() {
-				evalCtx := of.FlattenedContext{
-					of.TargetingKey: tt.userID,
-				}
-
-				result := provider.ObjectEvaluation(context.Background(), testFlagName, nil, evalCtx)
-
-				s.Equal(of.ResolutionError{}, result.ResolutionError, "expected no resolution error")
-				s.Equal(tt.expectedValue, result.Value)
-			})
-		}
-	})
-}
-
-// TestProviderNotReady tests that the provider returns errors when not initialized.
-func (s *IntegrationTestSuite) TestProviderNotReady() {
-	s.setupVCR(s.T().Name())
-	defer s.tearDownVCR()
-
-	provider, providerErr := pkg.New(
-		context.Background(),
-		s.deploymentKey,
-	)
-	s.Require().NoError(providerErr)
-	defer provider.Shutdown()
-
-	// Don't call Init - provider should not be ready
-
-	evalCtx := of.FlattenedContext{
-		of.TargetingKey: "test-user",
-	}
-
-	s.Run("BooleanEvaluation returns error when not ready", func() {
-		result := provider.BooleanEvaluation(context.Background(), testFlagName, false, evalCtx)
-		s.NotEmpty(result.ResolutionError)
-		s.Equal(false, result.Value) // Should return default
-	})
-
-	s.Run("StringEvaluation returns error when not ready", func() {
-		result := provider.StringEvaluation(context.Background(), testFlagName, "default", evalCtx)
-		s.NotEmpty(result.ResolutionError)
-		s.Equal("default", result.Value) // Should return default
-	})
-}
-
-// TestMissingTargetingKey tests that the provider returns errors when targeting key is missing.
-func (s *IntegrationTestSuite) TestMissingTargetingKey() {
-	s.setupVCR(s.T().Name())
-	defer s.tearDownVCR()
-
-	provider, providerErr := pkg.New(
-		context.Background(),
-		s.deploymentKey,
-	)
-	s.Require().NoError(providerErr)
-
-	initErr := provider.Init(of.EvaluationContext{})
-	s.Require().NoError(initErr)
-	defer provider.Shutdown()
-
-	// Empty eval context - no targeting key
-	evalCtx := of.FlattenedContext{}
-
-	result := provider.StringEvaluation(context.Background(), testFlagName, "default", evalCtx)
-
-	s.NotEmpty(result.ResolutionError)
-	s.Equal("default", result.Value)
-}
-
-// TestNewProvider_MissingDeploymentKey tests that NewProvider returns an error when deployment key is missing.
-func (s *IntegrationTestSuite) TestNewProvider_MissingDeploymentKey() {
-	_, providerErr := pkg.New(context.Background(), "")
-	s.Require().Error(providerErr)
-	s.Contains(providerErr.Error(), "you must provide a deployment key")
-}
-
-// Unused imports guard - ensures experiment package is available for type references
-var _ experiment.Variant

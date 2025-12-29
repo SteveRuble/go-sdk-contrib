@@ -13,10 +13,11 @@
 //
 // # Quick Start
 //
-// Create a provider and use it to evaluate feature flags:
+// Create a provider and register it with the OpenFeature SDK:
 //
 //	import (
 //	    "context"
+//	    "fmt"
 //
 //	    amplitude "github.com/open-feature/go-sdk-contrib/providers/amplitude"
 //	    "github.com/open-feature/go-sdk/openfeature"
@@ -29,19 +30,25 @@
 //	        panic(err)
 //	    }
 //
-//	    // Initialize the provider
-//	    if err := provider.Init(openfeature.EvaluationContext{}); err != nil {
+//	    // Register the provider with OpenFeature (this calls Init internally)
+//	    if err := openfeature.SetProviderAndWait(provider); err != nil {
 //	        panic(err)
 //	    }
-//	    defer provider.Shutdown()
+//	    defer openfeature.Shutdown()
+//
+//	    // Create a client
+//	    client := openfeature.NewClient("my-app")
 //
 //	    // Evaluate a flag
-//	    evalCtx := openfeature.FlattenedContext{
-//	        openfeature.TargetingKey: "user-123",
+//	    evalCtx := openfeature.NewEvaluationContext("user-123", map[string]any{
+//	        "country": "US",
+//	    })
+//	    enabled, err := client.BooleanValue(context.Background(), "my-feature-flag", false, evalCtx)
+//	    if err != nil {
+//	        fmt.Printf("Error evaluating flag: %v\n", err)
 //	    }
-//	    result := provider.BooleanEvaluation(context.Background(), "my-feature-flag", false, evalCtx)
 //
-//	    if result.Value {
+//	    if enabled {
 //	        // Feature is enabled
 //	    }
 //	}
@@ -55,6 +62,9 @@
 //   - [WithRemoteConfig]: Configure remote evaluation settings
 //   - [WithRemoteEvaluationCache]: Provide a cache for remote evaluation results
 //   - [WithKeyMap]: Customize the mapping of evaluation context keys to Amplitude user fields
+//   - [WithTrackingEnabled]: Enable event and exposure tracking via Amplitude Analytics
+//   - [WithUserNormalizer]: Apply custom transformations to user context before evaluation
+//   - [WithEventNormalizer]: Apply custom transformations to events before tracking
 //
 // # Local vs Remote Evaluation
 //
@@ -162,4 +172,85 @@
 //   - [KeyGroupProperties]: Group properties (map[string]map[string]any)
 //   - [KeyCohortIDs]: Cohort IDs for targeting (map[string]struct{})
 //   - [KeyGroupCohortIDSet]: Group cohort IDs (map[string]map[string]map[string]struct{})
+//
+// # Event Tracking
+//
+// The provider implements the [openfeature.Tracker] interface, allowing you to send
+// tracking events to Amplitude Analytics. This is essential for experimentation powered
+// by feature flags. To enable tracking, configure the provider with an analytics config:
+//
+//	provider, err := amplitude.New(ctx, "deployment-key",
+//	    amplitude.WithTrackingEnabled(analytics.Config{
+//	        APIKey: "your-amplitude-api-key", // This is your project key, not the deployment key
+//	    }),
+//	)
+//	openfeature.SetProviderAndWait(provider)
+//	client := openfeature.NewDefaultClient()
+//
+// When tracking is enabled:
+//   - Exposure events are automatically sent when flags are evaluated
+//   - You can send custom tracking events via the client's Track method
+//   - Assignment events are tracked for local evaluation
+//
+// See https://amplitude.com/docs/feature-experiment/under-the-hood/event-tracking for details.
+//
+// # Tracking Event Details and Revenue
+//
+// Use the client's Track method to send tracking events. The value passed to
+// [openfeature.NewTrackingEventDetails] is mapped to the Amplitude event's Revenue field:
+//
+//	// Track a purchase event with revenue
+//	evalCtx := openfeature.NewEvaluationContext("user-123", nil)
+//	details := openfeature.NewTrackingEventDetails(99.99).
+//	    Add("currency", "USD").
+//	    Add("product_id", "SKU-12345")
+//	client.Track(ctx, "purchase-completed", evalCtx, details)
+//
+// The value parameter (99.99 in this example) is interpreted as revenue and will be
+// set on the Amplitude event's Revenue field. If the value is 0, the Revenue field
+// is not set. If you want the value to end up in a different field, provide a custom
+// event normalizer using [WithEventNormalizer] and move the value there.
+//
+// Additional attributes added via Add() are mapped using the same key mapping logic
+// as the evaluation context. Unmapped keys are placed in the event's EventProperties.
+//
+// # User Normalizer
+//
+// For advanced user context transformation beyond key mapping, use [WithUserNormalizer].
+// The normalizer function is called after key mapping has been applied, allowing you
+// to modify the Amplitude User before evaluation:
+//
+//	provider, err := amplitude.New(ctx, "deployment-key",
+//	    amplitude.WithUserNormalizer(func(ctx context.Context, normCtx amplitude.UserNormalizationContext) error {
+//	        // Add computed properties
+//	        if normCtx.User.UserProperties == nil {
+//	            normCtx.User.UserProperties = make(map[string]any)
+//	        }
+//	        normCtx.User.UserProperties["computed_tier"] = computeTier(normCtx.EvaluationContext)
+//	        return nil
+//	    }),
+//	)
+//
+// The [UserNormalizationContext] provides access to both the original evaluation context
+// and the partially-built Amplitude User. Return an error to abort the evaluation.
+//
+// # Event Normalizer
+//
+// For advanced event transformation, use [WithEventNormalizer]. The normalizer function
+// is called after key mapping has been applied to tracking events:
+//
+//	provider, err := amplitude.New(ctx, "deployment-key",
+//	    amplitude.WithTrackingEnabled(analytics.Config{APIKey: "..."}),
+//	    amplitude.WithEventNormalizer(func(ctx context.Context, normCtx amplitude.EventNormalizationContext) error {
+//	        // Add user or group property mutations to the event
+//	        normCtx.Event.UserProperties = map[analytics.IdentityOp]map[string]any{
+//	            analytics.IdentityOpSet: {"last_action": normCtx.TrackingKey},
+//	        }
+//	        return nil
+//	    }),
+//	)
+//
+// The [EventNormalizationContext] provides access to the evaluation context, tracking key,
+// tracking event details, and the partially-built Amplitude Event. Return an error to
+// abort tracking for that event.
 package amplitude

@@ -1,8 +1,13 @@
 package amplitude
 
 import (
+	"context"
+
+	analytics "github.com/amplitude/analytics-go/amplitude"
+	"github.com/amplitude/experiment-go-server/pkg/experiment"
 	"github.com/amplitude/experiment-go-server/pkg/experiment/local"
 	"github.com/amplitude/experiment-go-server/pkg/experiment/remote"
+	of "github.com/open-feature/go-sdk/openfeature"
 )
 
 // Config contains the configuration for the Amplitude provider.
@@ -31,6 +36,29 @@ type Config struct {
 	// For more advanced normalization, use a hook to pre-process the evaluation context.
 	// If unset, [DefaultKeyMap] will be used.
 	KeyMap map[string]Key
+
+	// UserNormalizer is an optional function that normalizes the evaluation context into an Amplitude User.
+	// If set, it will be used to normalize the evaluation context into an Amplitude User,
+	// after key mapping has been applied. 
+	// In other words, you only need this if you're doing something
+	// beyond mapping keys from the evaluation context to canonical keys
+	// on the [experiment.User] type.
+	UserNormalizer func(ctx context.Context, context UserNormalizationContext) error
+
+	// EventNormalizer is an optional function that normalizes the evaluation context into an Amplitude Event.
+	// If set, it will be used to normalize the evaluation context into an Amplitude Event,
+	// after key mapping has been applied. 
+	// In other words, you only need this if you're doing something
+	// beyond mapping keys from the evaluation context to canonical keys
+	// on the [analytics.Event] type.
+	// You may want to do this if you want to have the event update
+	// user or group properties.
+	EventNormalizer func(ctx context.Context, normContext EventNormalizationContext) error
+
+	// AnalyticsConfig is an optional Amplitude analytics config.
+	// If set, it will be used to track events when the provider is used as a tracker.
+	// It will also automatically record exposure events for flags.
+	AnalyticsConfig *analytics.Config
 
 	// testClientAdapter is an optional clientAdapter for testing.
 	// When set, NewFromConfig will use this instead of creating a real client.
@@ -65,12 +93,78 @@ func WithRemoteEvaluationCache(cache Cache) Option {
 	}
 }
 
+// WithTrackingEnabled configures the Amplitude provider to track assignment and exposure events.
+// See documentation at https://amplitude.com/docs/feature-experiment/under-the-hood/event-tracking.
+// This option is automatically enabled if you're using local evaluation
+// and you populated [local.Config.AssignmentConfig] (and vice versa).
+// Note: assignment is automatically tracked for remote evaluation.
+func WithTrackingEnabled(config analytics.Config) Option {
+	return func(c *Config) {
+		c.AnalyticsConfig = &config
+	}
+}
+
 // WithKeyMap sets the key map for the Amplitude provider.
 // If unset, [DefaultKeyMap] will be used.
 func WithKeyMap(keyMap map[string]Key) Option {
 	return func(c *Config) {
 		c.KeyMap = keyMap
 	}
+}
+
+// WithUserNormalizer sets the user normalizer for the Amplitude provider.
+// If set, it will be used to normalize the evaluation context into an Amplitude User,
+// after key mapping has been applied. 
+// In other words, you only need this if you're doing something
+// beyond mapping keys from the evaluation context to canonical keys
+// on the [experiment.User] type.
+// You may want to do this if you want to have the user update
+// user or group properties.
+func WithUserNormalizer(userNormalizer func(ctx context.Context, context UserNormalizationContext) error) Option {
+	return func(c *Config) {
+		c.UserNormalizer = userNormalizer
+	}
+}
+
+// UserNormalizationContext is the context for the user normalizer.
+type UserNormalizationContext struct {
+	// EvaluationContext is the evaluation context for the user normalizer.
+	EvaluationContext of.FlattenedContext
+	// User is the user for the user normalizer.
+	// It will already have been populated with any 
+	// keys from the evaluation context that have been mapped to canonical keys
+	// on the [experiment.User] type.
+	User *experiment.User
+}
+
+// WithEventNormalizer sets the event normalizer for the Amplitude provider.
+// If set, it will be used to normalize the evaluation context into an Amplitude Event,
+// after key mapping has been applied. 
+// In other words, you only need this if you're doing something
+// beyond mapping keys from the evaluation context to canonical keys
+// on the [analytics.Event] type.
+// You may want to do this if you want to have the event update
+// user or group properties.
+func WithEventNormalizer(eventNormalizer func(ctx context.Context, normContext EventNormalizationContext) error) Option {
+	return func(c *Config) {
+		c.EventNormalizer = eventNormalizer
+	}
+}
+
+// EventNormalizationContext is the context for the event normalizer.
+type EventNormalizationContext struct {
+	// EvaluationContext is the evaluation context for the event normalizer.
+	EvaluationContext of.EvaluationContext
+	// TrackingKey is the tracking key (probably the event name).
+	TrackingKey string
+	// TrackingEventDetails is the tracking event details for the event normalizer.
+	TrackingEventDetails of.TrackingEventDetails
+	// Event is the event for the event normalizer.
+	// It will already have been populated with any 
+	// keys from the evaluation context and tracking event details 
+	// that have been mapped to canonical keys
+	// on the [analytics.Event] type.
+	Event *analytics.Event
 }
 
 // getKeyMap returns the key map for the Amplitude provider.

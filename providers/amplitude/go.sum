@@ -1,5 +1,7 @@
 github.com/amplitude/analytics-go v1.0.1 h1:rrdC5VBctlJigSk0kw7ktwSijob/wyH4bop2SqWduCU=
 github.com/amplitude/analytics-go v1.0.1/go.mod h1:kAQG8OQ6aPOxZrEZ3+/NFCfxdYSyjqXZhgkjWFD3/vo=
+github.com/amplitude/analytics-go v1.2.0 h1:+WUKyAAKwlmSM8d03QWG+NjnrQIyc6VJRGPNkaa2ckI=
+github.com/amplitude/analytics-go v1.2.0/go.mod h1:kAQG8OQ6aPOxZrEZ3+/NFCfxdYSyjqXZhgkjWFD3/vo=
 github.com/amplitude/experiment-go-server v1.9.0 h1:SwcU62KqCEUt/Lx+21vf2+whDUKQ/XYqOjmRBhvo75E=
 github.com/amplitude/experiment-go-server v1.9.0/go.mod h1:kzZjS01OkjKloA6sAoEuGlagGsu+jTkkloZUVTbtP84=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=

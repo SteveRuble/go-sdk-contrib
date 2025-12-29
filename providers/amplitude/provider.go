@@ -7,7 +7,10 @@ import (
 	"fmt"
 	"strconv"
 
+	analytics "github.com/amplitude/analytics-go/amplitude"
 	experiment "github.com/amplitude/experiment-go-server/pkg/experiment"
+	"github.com/amplitude/experiment-go-server/pkg/experiment/local"
+	"github.com/amplitude/experiment-go-server/pkg/logger"
 	of "github.com/open-feature/go-sdk/openfeature"
 )
 
@@ -15,13 +18,17 @@ import (
 var (
 	_ of.FeatureProvider = (*Provider)(nil)
 	_ of.StateHandler    = (*Provider)(nil)
+	_ of.Tracker         = (*Provider)(nil)
 )
 
 // Provider is an OpenFeature provider implementation for Amplitude.
 type Provider struct {
-	config Config
-	state  of.State
-	client clientAdapter
+	config            Config
+	state             of.State
+	evaluationContext of.EvaluationContext
+	client            clientAdapter
+	logger            *logger.Logger
+	analyticsClient   analytics.Client
 }
 
 const (
@@ -66,8 +73,28 @@ func NewFromConfig(_ context.Context, config Config) (*Provider, error) {
 		return nil, errors.New("you cannot configure the provider to use both local and remote evaluation at the same time")
 	case config.RemoteConfig != nil:
 		provider.client = newClientAdapterRemote(config.DeploymentKey, config.getRemoteConfig())
+		provider.logger = logger.New(config.RemoteConfig.LogLevel, config.RemoteConfig.LoggerProvider)
 	default:
+		localCfg := config.getLocalConfig()
+		// Ensure that if the user provided an analytics config, 
+		// we use it for the assignment config no matter how the user configured it
+		if config.AnalyticsConfig == nil && localCfg.AssignmentConfig != nil {
+			config.AnalyticsConfig = &analytics.Config{}
+		} else if config.AnalyticsConfig != nil && localCfg.AssignmentConfig == nil {
+			localCfg.AssignmentConfig = &local.AssignmentConfig{
+				Config: *config.AnalyticsConfig,
+			}
+		}
 		provider.client = newClientAdapterLocal(config.DeploymentKey, config.getLocalConfig())
+		provider.logger = logger.New(config.LocalConfig.LogLevel, config.LocalConfig.LoggerProvider)
+	}
+
+	if provider.logger == nil {
+		provider.logger = logger.New(logger.Error, logger.NewDefault())
+	}
+
+	if provider.config.AnalyticsConfig != nil {
+		provider.analyticsClient = analytics.NewClient(*provider.config.AnalyticsConfig)
 	}
 
 	return provider, nil
@@ -77,6 +104,7 @@ func NewFromConfig(_ context.Context, config Config) (*Provider, error) {
 // This must be called before using the provider.
 // For local evaluation, this starts the flag config polling.
 // For remote evaluation, this is a no-op as fetching happens per-request.
+// The evaluation context passed is not used by this provider.
 func (p *Provider) Init(_ of.EvaluationContext) error {
 	// Only local client needs to be started
 	startErr := p.client.Start()
@@ -422,6 +450,84 @@ func (p *Provider) ObjectEvaluation(ctx context.Context, flag string, defaultVal
 	}
 }
 
+// Track sends a tracking event to Amplitude. This implements the [of.Tracker] interface.
+// If the analytics client is not configured, this is a no-op.
+func (p *Provider) Track(ctx context.Context, trackingEventName string, evalCtx of.EvaluationContext, details of.TrackingEventDetails) {
+
+	if p.analyticsClient == nil {
+		return
+	}
+
+	event, err := p.toAmplitudeEvent(ctx, trackingEventName, evalCtx, details)
+	if err != nil {
+		p.logger.Error("failed to create event: %w", err)
+		return
+	}
+
+	p.analyticsClient.Track(event)
+}
+
+func (p *Provider) toAmplitudeEvent(ctx context.Context, trackingEventName string, evalCtx of.EvaluationContext, details of.TrackingEventDetails) (analytics.Event, error) {
+	attributes := evalCtx.Attributes()
+	if evalCtx.TargetingKey() != "" {
+		attributes[string(KeyUserID)] = evalCtx.TargetingKey()
+	}
+
+	var event analytics.Event
+
+	eventMap, _ := p.normalizeContext(attributes)
+	eventMapJSON, err := json.Marshal(eventMap)
+	if err != nil {
+		return event, fmt.Errorf("failed to marshal event map: %w", err)
+	}
+
+	err = json.Unmarshal(eventMapJSON, &event)
+	if err != nil {
+		return event, fmt.Errorf("failed to unmarshal event map: %w", err)
+	}
+
+	detailsMap, extraEventProperties  := p.normalizeContext(details.Attributes())
+	detailsMapJSON, err := json.Marshal(detailsMap)
+	if err != nil {
+		return event, fmt.Errorf("failed to marshal details map: %w", err)	
+	}
+	err = json.Unmarshal(detailsMapJSON, &event)
+	if err != nil {
+		return event, fmt.Errorf("failed to unmarshal event details map: %w", err)
+	}
+	if event.EventProperties == nil {
+		event.EventProperties = make(map[string]any, len(extraEventProperties))
+	}
+	for k, v := range extraEventProperties {
+		event.EventProperties[k] = v
+	}
+
+	// Assign the direct fields which may not have been set from the context or details.
+	event.UserID = evalCtx.TargetingKey()
+	event.EventType = trackingEventName
+
+	// Map the TrackingEventDetails value to the Amplitude revenue field.
+	// The OpenFeature spec indicates that the value parameter in NewTrackingEventDetails
+	// represents a monetary value, typically revenue.
+	if details.Value() != 0 {
+		event.Revenue = details.Value()
+	}
+
+	if p.config.EventNormalizer != nil {
+		err = p.config.EventNormalizer(ctx, EventNormalizationContext{
+			EvaluationContext: evalCtx,
+			TrackingKey:       trackingEventName,
+			Event:             &event,
+			TrackingEventDetails: details,
+		})
+		if err != nil {
+			return event, fmt.Errorf("failed to normalize event: %w", err)
+		}
+	}
+
+	return event, nil
+}
+
 // evaluateFlag evaluates a flag for the given context and returns the variant.
 // Returns nil variant (with no error) when the variant key is "off", indicating
 // that the caller should use the default value.
@@ -432,7 +538,7 @@ func (p *Provider) evaluateFlag(ctx context.Context, flag string, evalCtx of.Fla
 		return nil, &resErr
 	}
 
-	user, userErr := p.toAmplitudeUser(evalCtx)
+	user, userErr := p.toAmplitudeUser(ctx, evalCtx)
 	if userErr != nil {
 		resErr := of.NewInvalidContextResolutionError(userErr.Error())
 		return nil, &resErr
@@ -448,6 +554,21 @@ func (p *Provider) evaluateFlag(ctx context.Context, flag string, evalCtx of.Fla
 	if !ok {
 		resErr := of.NewFlagNotFoundResolutionError(fmt.Sprintf("flag %s not found", flag))
 		return nil, &resErr
+	}
+
+	// Create the tracking event details for the exposure event.
+	// These fields are based on the documentation at 
+	// https://amplitude.com/docs/feature-experiment/under-the-hood/event-tracking#exposure-events
+	if p.analyticsClient != nil {
+		p.analyticsClient.Track(analytics.Event{
+			EventType: "$exposure",
+			UserID: user.UserId,
+			EventProperties: map[string]any{
+				"flag_key": flag,
+				"variant": variant.Key,
+				"metadata": variant.Metadata,
+			},
+		})
 	}
 
 	// When variant key is "off", Amplitude indicates the user is not in the rollout.
@@ -476,22 +597,8 @@ func variantMetadata(variant *experiment.Variant) map[string]any {
 }
 
 // toAmplitudeUser converts an OpenFeature evaluation context to an Amplitude User.
-func (p *Provider) toAmplitudeUser(evalCtx of.FlattenedContext) (*experiment.User, error) {
-	userMap := make(map[Key]any)
-	keyMap := p.config.getKeyMap()
-	for key, val := range evalCtx {
-		resolvedKey, ok := keyMap[key]
-		if ok {
-			userMap[resolvedKey] = val
-		} else {
-			userProperties, ok := userMap[KeyUserProperties].(map[string]any)
-			if !ok {
-				userProperties = make(map[string]any)
-				userMap[KeyUserProperties] = userProperties
-			}
-			userProperties[key] = val
-		}
-	}
+func (p *Provider) toAmplitudeUser(ctx context.Context, evalCtx of.FlattenedContext) (*experiment.User, error) {
+	userMap, userProperties := p.normalizeContext( evalCtx)
 	userMapJSON, err := json.Marshal(userMap)
 	if err != nil {
 		return nil, fmt.Errorf("failed to marshal user map: %w", err)
@@ -503,9 +610,48 @@ func (p *Provider) toAmplitudeUser(evalCtx of.FlattenedContext) (*experiment.Use
 		return nil, fmt.Errorf("failed to unmarshal user map: %w", err)
 	}
 
+	// Ensure that we include the user properties if the context explicitly contained
+	// a `user_properties` key, as well as including any attributes from the context
+	// which didn't map to a canonical key.
+	if user.UserProperties == nil && len(userProperties) > 0 {
+		user.UserProperties = make(map[string]any, len(userProperties))
+	}
+	for k, v := range userProperties {
+		user.UserProperties[k] = v
+	}
+
+	if p.config.UserNormalizer != nil {
+		err = p.config.UserNormalizer(ctx, UserNormalizationContext{
+			EvaluationContext: evalCtx,
+			User:              &user,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("failed to normalize user: %w", err)
+		}
+	}
+
 	if user.UserId == "" && user.DeviceId == "" {
 		return nil, fmt.Errorf("context must contain a %s, %s, or %s", of.TargetingKey, KeyUserID, KeyDeviceID)
 	}
 
 	return &user, nil
+}
+
+
+// normalizeContext normalizes the context map into an Amplitude User or Event.
+// It returns a map of the normalized keys and a map of the extra keys.
+// The extra keys are the keys that were not found in the key map.
+func (p *Provider) normalizeContext(contextMap map[string]any) (normalized map[Key]any, extra map[string]any) {
+	normalizedMap := make(map[Key]any, len(contextMap)+1)
+	extraMap := make(map[string]any)
+	keyMap := p.config.getKeyMap()
+	for key, val := range contextMap {
+		resolvedKey, ok := keyMap[key]
+		if ok {
+			normalizedMap[resolvedKey] = val
+		} else {
+			extraMap[key] = val
+		}
+	}
+	return normalizedMap, extraMap
 }

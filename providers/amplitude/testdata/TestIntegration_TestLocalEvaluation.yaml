@@ -24,7 +24,7 @@ interactions:
         proto_minor: 0
         content_length: -1
         uncompressed: true
-        body: '[{"key":"test-feature-flag","metadata":{"deployed":true,"evaluationMode":"local","flagType":"release","flagVersion":32},"segments":[{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-enabled"]}]],"metadata":{"segmentName":"expect-enabled"},"variant":"enabled"},{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-int"]}]],"metadata":{"segmentName":"expect-int"},"variant":"int"},{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-float"]}]],"metadata":{"segmentName":"expect-float"},"variant":"float"},{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-string"]}]],"metadata":{"segmentName":"expect-string"},"variant":"string"},{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-object"]}]],"metadata":{"segmentName":"expect-object"},"variant":"object"},{"metadata":{"segmentName":"All Other Users"},"variant":"off"}],"variants":{"enabled":{"key":"enabled","payload":true,"value":"enabled"},"float":{"key":"float","payload":12.34,"value":"float"},"int":{"key":"int","payload":42,"value":"int"},"object":{"key":"object","payload":{"a":"A","b":"B"},"value":"object"},"off":{"key":"off","metadata":{"default":true}},"string":{"key":"string","payload":"foo","value":"string"}}}]'
+        body: '[{"key":"test-feature-flag","metadata":{"deployed":true,"evaluationMode":"local","flagType":"release","flagVersion":84},"segments":[{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-enabled"]}]],"metadata":{"segmentName":"expect-enabled"},"variant":"enabled"},{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-int"]}]],"metadata":{"segmentName":"expect-int"},"variant":"int"},{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-float"]}]],"metadata":{"segmentName":"expect-float"},"variant":"float"},{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-string"]}]],"metadata":{"segmentName":"expect-string"},"variant":"string"},{"conditions":[[{"op":"is","selector":["context","user","user_id"],"values":["expect-object"]}]],"metadata":{"segmentName":"expect-object"},"variant":"object"},{"metadata":{"segmentName":"All Other Users"},"variant":"off"}],"variants":{"enabled":{"key":"enabled","payload":true,"value":"enabled"},"float":{"key":"float","payload":12.34,"value":"float"},"int":{"key":"int","payload":42,"value":"int"},"object":{"key":"object","payload":{"a":"A","b":"B"},"value":"object"},"off":{"key":"off","metadata":{"default":true}},"string":{"key":"string","payload":"foo","value":"string"}}}]'
         headers:
             Accept-Ranges:
                 - bytes
@@ -37,7 +37,7 @@ interactions:
             Content-Type:
                 - application/json;charset=utf-8
             Date:
-                - Sat, 27 Dec 2025 20:16:41 GMT
+                - Mon, 29 Dec 2025 14:47:21 GMT
             Strict-Transport-Security:
                 - max-age=31536000; includeSubDomains; preload
             Vary:
@@ -49,9 +49,44 @@ interactions:
             X-Content-Type-Options:
                 - nosniff
             X-Served-By:
-                - cache-chi-kigq8000071-CHI
+                - cache-chi-kigq8000145-CHI
             X-Timer:
-                - S1766866601.815425,VS0,VE260
+                - S1767019642.754611,VS0,VE71
         status: 200 OK
         code: 200
-        duration: 383.355416ms
+        duration: 247.186709ms
+    - id: 1
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 409
+        host: api2.amplitude.com
+        body: '{"api_key":"b14268da4131dce8702a4f9802952b9b","events":[{"event_type":"$exposure","user_id":"expect-enabled","time":1767019641796,"insert_id":"c45eb72c-ef7f-41ce-8a17-cfaa5e53caac","library":"amplitude-go/1.2.0","event_properties":{"flag_key":"test-feature-flag","metadata":{"deployed":true,"evaluationMode":"local","flagType":"release","flagVersion":84,"segmentName":"expect-enabled"},"variant":"enabled"}}]}'
+        headers:
+            Accept:
+                - '*/*'
+            Content-Type:
+                - application/json
+        url: https://api2.amplitude.com/2/httpapi
+        method: POST
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: 92
+        body: '{"code":200,"server_upload_time":1767019642045,"payload_size_bytes":409,"events_ingested":1}'
+        headers:
+            Access-Control-Allow-Origin:
+                - '*'
+            Content-Length:
+                - "92"
+            Content-Type:
+                - application/json
+            Date:
+                - Mon, 29 Dec 2025 14:47:22 GMT
+            Strict-Transport-Security:
+                - max-age=15768000
+        status: 200 OK
+        code: 200
+        duration: 247.522542ms

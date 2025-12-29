@@ -21,7 +21,7 @@ interactions:
         proto_minor: 0
         content_length: -1
         uncompressed: true
-        body: '{"test-feature-flag":{"key":"enabled","metadata":{"evaluationId":"1429732933887_1766866601186_7924"},"payload":true,"value":"enabled"}}'
+        body: '{"test-feature-flag":{"key":"enabled","metadata":{"evaluationId":"1429732933887_1767019737513_4476"},"payload":true,"value":"enabled"}}'
         headers:
             Accept-Ranges:
                 - bytes
@@ -34,7 +34,7 @@ interactions:
             Content-Type:
                 - application/json;charset=utf-8
             Date:
-                - Sat, 27 Dec 2025 20:16:41 GMT
+                - Mon, 29 Dec 2025 14:48:57 GMT
             Strict-Transport-Security:
                 - max-age=31536000; includeSubDomains; preload
             Vary:
@@ -46,13 +46,48 @@ interactions:
             X-Content-Type-Options:
                 - nosniff
             X-Served-By:
-                - cache-chi-kigq8000071-CHI
+                - cache-chi-kigq8000083-CHI
             X-Timer:
-                - S1766866601.156733,VS0,VE68
+                - S1767019737.302901,VS0,VE247
         status: 200 OK
         code: 200
-        duration: 105.88525ms
+        duration: 365.017708ms
     - id: 1
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 349
+        host: api2.amplitude.com
+        body: '{"api_key":"b14268da4131dce8702a4f9802952b9b","events":[{"event_type":"$exposure","user_id":"expect-enabled","time":1767019737520,"insert_id":"7e2a67ba-1bd9-4fd3-9ea7-4b95a1e885c8","library":"amplitude-go/1.2.0","event_properties":{"flag_key":"test-feature-flag","metadata":{"evaluationId":"1429732933887_1767019737513_4476"},"variant":"enabled"}}]}'
+        headers:
+            Accept:
+                - '*/*'
+            Content-Type:
+                - application/json
+        url: https://api2.amplitude.com/2/httpapi
+        method: POST
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: 92
+        body: '{"code":200,"server_upload_time":1767019737775,"payload_size_bytes":349,"events_ingested":1}'
+        headers:
+            Access-Control-Allow-Origin:
+                - '*'
+            Content-Length:
+                - "92"
+            Content-Type:
+                - application/json
+            Date:
+                - Mon, 29 Dec 2025 14:48:57 GMT
+            Strict-Transport-Security:
+                - max-age=15768000
+        status: 200 OK
+        code: 200
+        duration: 251.142709ms
+    - id: 2
       request:
         proto: HTTP/1.1
         proto_major: 1
@@ -72,7 +107,7 @@ interactions:
         proto_minor: 0
         content_length: -1
         uncompressed: true
-        body: '{"test-feature-flag":{"key":"string","metadata":{"evaluationId":"1429732949956_1766866601292_2788"},"payload":"foo","value":"string"}}'
+        body: '{"test-feature-flag":{"key":"string","metadata":{"evaluationId":"1429732949956_1767019737872_2577"},"payload":"foo","value":"string"}}'
         headers:
             Accept-Ranges:
                 - bytes
@@ -85,7 +120,7 @@ interactions:
             Content-Type:
                 - application/json;charset=utf-8
             Date:
-                - Sat, 27 Dec 2025 20:16:41 GMT
+                - Mon, 29 Dec 2025 14:48:57 GMT
             Strict-Transport-Security:
                 - max-age=31536000; includeSubDomains; preload
             Vary:
@@ -97,13 +132,13 @@ interactions:
             X-Content-Type-Options:
                 - nosniff
             X-Served-By:
-                - cache-chi-kigq8000071-CHI
+                - cache-chi-kigq8000083-CHI
             X-Timer:
-                - S1766866601.264342,VS0,VE52
+                - S1767019738.843941,VS0,VE63
         status: 200 OK
         code: 200
-        duration: 92.246125ms
-    - id: 2
+        duration: 102.3265ms
+    - id: 3
       request:
         proto: HTTP/1.1
         proto_major: 1
@@ -123,7 +158,7 @@ interactions:
         proto_minor: 0
         content_length: -1
         uncompressed: true
-        body: '{"test-feature-flag":{"key":"int","metadata":{"evaluationId":"1429732935788_1766866601379_5033"},"payload":42,"value":"int"}}'
+        body: '{"test-feature-flag":{"key":"int","metadata":{"evaluationId":"1429732935788_1767019737972_9119"},"payload":42,"value":"int"}}'
         headers:
             Accept-Ranges:
                 - bytes
@@ -136,7 +171,7 @@ interactions:
             Content-Type:
                 - application/json;charset=utf-8
             Date:
-                - Sat, 27 Dec 2025 20:16:41 GMT
+                - Mon, 29 Dec 2025 14:48:57 GMT
             Strict-Transport-Security:
                 - max-age=31536000; includeSubDomains; preload
             Vary:
@@ -148,13 +183,48 @@ interactions:
             X-Content-Type-Options:
                 - nosniff
             X-Served-By:
-                - cache-chi-kigq8000071-CHI
+                - cache-chi-kigq8000083-CHI
             X-Timer:
-                - S1766866601.352818,VS0,VE50
+                - S1767019738.945174,VS0,VE51
         status: 200 OK
         code: 200
-        duration: 86.273291ms
-    - id: 3
+        duration: 87.745291ms
+    - id: 4
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 347
+        host: api2.amplitude.com
+        body: '{"api_key":"b14268da4131dce8702a4f9802952b9b","events":[{"event_type":"$exposure","user_id":"expect-string","time":1767019737878,"insert_id":"93e1d20c-fb74-460e-b1d0-662bded45548","library":"amplitude-go/1.2.0","event_properties":{"flag_key":"test-feature-flag","metadata":{"evaluationId":"1429732949956_1767019737872_2577"},"variant":"string"}}]}'
+        headers:
+            Accept:
+                - '*/*'
+            Content-Type:
+                - application/json
+        url: https://api2.amplitude.com/2/httpapi
+        method: POST
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: 92
+        body: '{"code":200,"server_upload_time":1767019737965,"payload_size_bytes":347,"events_ingested":1}'
+        headers:
+            Access-Control-Allow-Origin:
+                - '*'
+            Content-Length:
+                - "92"
+            Content-Type:
+                - application/json
+            Date:
+                - Mon, 29 Dec 2025 14:48:57 GMT
+            Strict-Transport-Security:
+                - max-age=15768000
+        status: 200 OK
+        code: 200
+        duration: 89.450167ms
+    - id: 5
       request:
         proto: HTTP/1.1
         proto_major: 1
@@ -174,7 +244,7 @@ interactions:
         proto_minor: 0
         content_length: -1
         uncompressed: true
-        body: '{"test-feature-flag":{"key":"float","metadata":{"evaluationId":"1429732929522_1766866601471_6858"},"payload":12.34,"value":"float"}}'
+        body: '{"test-feature-flag":{"key":"float","metadata":{"evaluationId":"1429732929522_1767019738064_6433"},"payload":12.34,"value":"float"}}'
         headers:
             Accept-Ranges:
                 - bytes
@@ -187,7 +257,7 @@ interactions:
             Content-Type:
                 - application/json;charset=utf-8
             Date:
-                - Sat, 27 Dec 2025 20:16:41 GMT
+                - Mon, 29 Dec 2025 14:48:58 GMT
             Strict-Transport-Security:
                 - max-age=31536000; includeSubDomains; preload
             Vary:
@@ -199,13 +269,48 @@ interactions:
             X-Content-Type-Options:
                 - nosniff
             X-Served-By:
-                - cache-chi-kigq8000071-CHI
+                - cache-chi-kigq8000083-CHI
             X-Timer:
-                - S1766866601.443428,VS0,VE53
+                - S1767019738.036746,VS0,VE53
         status: 200 OK
         code: 200
-        duration: 97.712041ms
-    - id: 4
+        duration: 92.846958ms
+    - id: 6
+      request:
+        proto: HTTP/1.1
+        proto_major: 1
+        proto_minor: 1
+        content_length: 341
+        host: api2.amplitude.com
+        body: '{"api_key":"b14268da4131dce8702a4f9802952b9b","events":[{"event_type":"$exposure","user_id":"expect-int","time":1767019737966,"insert_id":"037e7cec-9440-4115-8987-ec91dc15d213","library":"amplitude-go/1.2.0","event_properties":{"flag_key":"test-feature-flag","metadata":{"evaluationId":"1429732935788_1767019737972_9119"},"variant":"int"}}]}'
+        headers:
+            Accept:
+                - '*/*'
+            Content-Type:
+                - application/json
+        url: https://api2.amplitude.com/2/httpapi
+        method: POST
+      response:
+        proto: HTTP/2.0
+        proto_major: 2
+        proto_minor: 0
+        content_length: 92
+        body: '{"code":200,"server_upload_time":1767019738054,"payload_size_bytes":341,"events_ingested":1}'
+        headers:
+            Access-Control-Allow-Origin:
+                - '*'
+            Content-Length:
+                - "92"
+            Content-Type:
+                - application/json
+            Date:
+                - Mon, 29 Dec 2025 14:48:58 GMT
+            Strict-Transport-Security:
+                - max-age=15768000
+        status: 200 OK
+        code: 200
+        duration: 93.9535ms
+    - id: 7
       request:
         proto: HTTP/1.1
         proto_major: 1
@@ -225,7 +330,7 @@ interactions:
         proto_minor: 0
         content_length: -1
         uncompressed: true
-        body: '{"test-feature-flag":{"key":"object","metadata":{"evaluationId":"1429732928838_1766866601574_8902"},"payload":{"a":"A","b":"B"},"value":"object"}}'
+        body: '{"test-feature-flag":{"key":"object","metadata":{"evaluationId":"1429732928838_1767019738154_5823"},"payload":{"a":"A","b":"B"},"value":"object"}}'
         headers:
             Accept-Ranges:
                 - bytes
@@ -238,7 +343,7 @@ interactions:
             Content-Type:
                 - application/json;charset=utf-8
             Date:
-                - Sat, 27 Dec 2025 20:16:41 GMT
+                - Mon, 29 Dec 2025 14:48:58 GMT
             Strict-Transport-Security:
                 - max-age=31536000; includeSubDomains; preload
             Vary:
@@ -250,9 +355,9 @@ interactions:
             X-Content-Type-Options:
                 - nosniff
             X-Served-By:
-                - cache-chi-kigq8000071-CHI
+                - cache-chi-kigq8000083-CHI
             X-Timer:
-                - S1766866602.543191,VS0,VE64
+                - S1767019738.125214,VS0,VE53
         status: 200 OK
         code: 200
-        duration: 105.352958ms
+        duration: 87.567167ms
